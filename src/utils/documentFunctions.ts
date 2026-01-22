@@ -20,10 +20,10 @@ export const handleView = async (id: number, userId: any) => {
 export const handleViewOldDocument = async (versionDocumentId: string) => {
   try {
     const response = await getWithAuth(`view-old-document/${versionDocumentId}`);
-    // console.log("view old document data : ", response);
-    window.open(response.data, "_blank");
+    return response.data;
   } catch (error) {
     console.error("Error viewing old document:", error);
+    return null;
   }
 };
 
