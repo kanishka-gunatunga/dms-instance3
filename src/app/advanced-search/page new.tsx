@@ -4782,24 +4782,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
               )}
             </div>
 
-            <p className="mb-1 mt-3" style={{ fontSize: "14px" }}>
-              Document Name :{" "}
-              <span style={{ fontWeight: 600 }}>
-                {oldVersionDocument?.name || ""}
-              </span>
-            </p>
-            <p className="mb-1" style={{ fontSize: "14px" }}>
-              Category :{" "}
-              <span style={{ fontWeight: 600 }}>
-                {oldVersionDocument?.category?.category_name || ""}
-              </span>
-            </p>
-            <p className="mb-1" style={{ fontSize: "14px" }}>
-              Description :{" "}
-              <span style={{ fontWeight: 600 }}>
-                {oldVersionDocument?.description || ""}
-              </span>
-            </p>
+           
           </Modal.Body>
           <Modal.Footer>
             <button
