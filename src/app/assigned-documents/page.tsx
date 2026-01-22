@@ -310,7 +310,7 @@ export default function AllDocTable() {
   const [viewDocument, setViewDocument] = useState<ViewDocumentItem | null>(
     null
   );
-  const [oldVersionDocument, setOldVersionDocument] = useState<any | null>(
+  const [oldVersionDocument, setOldVersionDocument] = useState<ViewDocumentItem | null>(
     null
   );
   const [attributes, setAttributes] = useState<Attribute[]>([]);
