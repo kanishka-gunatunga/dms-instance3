@@ -14,7 +14,7 @@ import useAuth from "@/hooks/useAuth";
 import { CommentItem, UserDropdownItem, RoleDropdownItem, VersionHistoryItem } from "@/types/types";
 import { deleteWithAuth, getWithAuth, postWithAuth } from "@/utils/apiClient";
 import { fetchCategoryData, fetchDocumentsData, fetchAndMapUserData, fetchRoleData, fetchVersionHistory } from "@/utils/dataFetchFunctions";
-import { handleDownload } from "@/utils/documentFunctions";
+import { handleDownload, handleViewOldDocument } from "@/utils/documentFunctions";
 import { hasPermission } from "@/utils/permission";
 import { Button, Checkbox, DatePicker, DatePickerProps, Input, Radio, RadioChangeEvent } from "antd";
 import dayjs from "dayjs";
@@ -3085,8 +3085,7 @@ export default function AllDocTable() {
                         <p className="mb-0 me-3">{item.created_by}</p>
                       </div>
 
-                      <div className="col-12 col-lg-2 d-flex justify-content-lg-end">
-                        {" "}
+                      <div className="col-12 col-lg-2 d-flex justify-content-lg-end gap-2">
                         {isLatestVersion && (
                           <span
                             className="bg-success px-3 py-1 rounded-pill text-white mb-0 d-flex justify-content-center align-items-center"
@@ -3095,6 +3094,12 @@ export default function AllDocTable() {
                             Current Version
                           </span>
                         )}
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleViewOldDocument(item.id)}
+                        >
+                          View
+                        </button>
                       </div>
                     </div>
                   </div>

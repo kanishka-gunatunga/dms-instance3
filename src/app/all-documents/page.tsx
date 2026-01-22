@@ -57,7 +57,7 @@ import {
   getWithAuth,
   postWithAuth,
 } from "@/utils/apiClient";
-import { handleDownload, handleView } from "@/utils/documentFunctions";
+import { handleDownload, handleView, handleViewOldDocument } from "@/utils/documentFunctions";
 import {
   fetchAndMapUserData,
   fetchCategoryData,
@@ -3658,8 +3658,7 @@ export default function AllDocTable() {
                         <p className="mb-0 me-3">{item.created_by}</p>
                       </div>
 
-                      <div className="col-12 col-lg-2 d-flex justify-content-lg-end">
-                        {" "}
+                      <div className="col-12 col-lg-2 d-flex justify-content-lg-end gap-2">
                         {isLatestVersion && (
                           <span
                             className="bg-success px-3 py-1 rounded-pill text-white mb-0 d-flex justify-content-center align-items-center"
@@ -3668,6 +3667,12 @@ export default function AllDocTable() {
                             Current Version
                           </span>
                         )}
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleViewOldDocument(item.id)}
+                        >
+                          View
+                        </button>
                       </div>
                     </div>
                   </div>
