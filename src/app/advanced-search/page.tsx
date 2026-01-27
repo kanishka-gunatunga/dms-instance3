@@ -83,6 +83,7 @@ interface EditDocumentItem {
   category: Category;
   description: string;
   meta_tags: string;
+  attributes: string;
 }
 
 interface Attribute {
@@ -254,6 +255,8 @@ export default function AllDocTable() {
     null
   );
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [editAttributes, setEditAttributes] = useState<string[]>([]);
+  const [editFormAttributeData, setEditFormAttributeData] = useState<{ attribute: string; value: string }[]>([]);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
@@ -382,6 +385,8 @@ export default function AllDocTable() {
       setEditDocument((prev) =>
         prev ? { ...prev, category: selectedCategory } : null
       );
+      // Fetch attributes for the selected category
+      handleGetEditAttributes(categoryId);
     }
   };
 
@@ -655,6 +660,29 @@ export default function AllDocTable() {
     const updatedMetaTags = metaTags.filter((_, i) => i !== index);
     setMetaTags(updatedMetaTags);
     setEditDocument((prev) => prev ? { ...prev, meta_tags: JSON.stringify(updatedMetaTags) } : null);
+  };
+
+  // Attribute functions for edit modal
+  const handleGetEditAttributes = async (id: string) => {
+    try {
+      const response = await getWithAuth(`attribute-by-category/${id}`);
+      const parsedAttributes = JSON.parse(response.attributes);
+      setEditAttributes(parsedAttributes);
+    } catch (error) {
+      console.error("Error getting attributes:", error);
+    }
+  };
+
+  const handleEditAttributeInputChange = (attribute: string, value: string) => {
+    setEditFormAttributeData((prevData) => {
+      const existingIndex = prevData.findIndex((item) => item.attribute === attribute);
+      if (existingIndex !== -1) {
+        const updatedData = [...prevData];
+        updatedData[existingIndex] = { attribute, value };
+        return updatedData;
+      }
+      return [...prevData, { attribute, value }];
+    });
   };
 
 
@@ -1135,6 +1163,17 @@ export default function AllDocTable() {
       if (Array.isArray(response) && response.length > 0) {
         setEditDocument(response[0]);
         setSelectedCategoryIdEdit(response[0]?.category?.id.toString() || "");
+
+        // Parse and load existing attributes
+        if (response[0]?.attributes) {
+          const parsedAttributes = JSON.parse(response[0].attributes);
+          setEditFormAttributeData(parsedAttributes);
+        }
+
+        // Fetch attributes for the category
+        if (response[0]?.category?.id) {
+          handleGetEditAttributes(response[0].category.id.toString());
+        }
       } else {
         console.error("Response is not a valid array or is empty");
       }
@@ -1159,6 +1198,7 @@ export default function AllDocTable() {
         formData.append("description", editDocument.description);
         formData.append("category", `${selectedCategoryIdEdit}`);
         formData.append("meta_tags", JSON.stringify(metaTags));
+        formData.append("attribute_data", JSON.stringify(editFormAttributeData));
         formData.append("user", userId || "");
       }
 
@@ -1173,7 +1213,9 @@ export default function AllDocTable() {
         }, 5000);
         handleCloseModal("editModel");
         fetchDocumentsData(setDummyData);
-        setMetaTags([])
+        setMetaTags([]);
+        setEditAttributes([]);
+        setEditFormAttributeData([]);
       } else {
         setToastType("error");
         setToastMessage("An error occurred while updating the document!");
@@ -1181,7 +1223,9 @@ export default function AllDocTable() {
         setTimeout(() => {
           setShowToast(false);
         }, 5000);
-        setMetaTags([])
+        setMetaTags([]);
+        setEditAttributes([]);
+        setEditFormAttributeData([]);
       }
     } catch (error) {
       // console.error("Error updating document:", error);
