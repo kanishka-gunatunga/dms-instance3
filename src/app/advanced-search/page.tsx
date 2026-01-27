@@ -139,6 +139,9 @@ export default function AllDocTable() {
   const [selectedCategoryIdEdit, setSelectedCategoryIdEdit] = useState<string>("");
 
   const [metaTags, setMetaTags] = useState<string[]>([]);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [editAttributes, setEditAttributes] = useState<string[]>([]);
+  const [editFormAttributeData, setEditFormAttributeData] = useState<{ attribute: string; value: string }[]>([]);
   const [currentMeta, setCurrentMeta] = useState<string>("");
   const [showToast, setShowToast] = useState(false);
   const [toastType, setToastType] = useState<"success" | "error">("success");
@@ -254,9 +257,6 @@ export default function AllDocTable() {
   const [oldVersionDocument, setOldVersionDocument] = useState<ViewDocumentItem | null>(
     null
   );
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [editAttributes, setEditAttributes] = useState<string[]>([]);
-  const [editFormAttributeData, setEditFormAttributeData] = useState<{ attribute: string; value: string }[]>([]);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
@@ -376,7 +376,7 @@ export default function AllDocTable() {
     }
   };
 
-  const handleCategoryEditSelect = (categoryId: string) => {
+   const handleCategoryEditSelect = (categoryId: string) => {
     const selectedCategory = categoryDropDownData.find(
       (category) => category.id.toString() === categoryId
     );
@@ -663,27 +663,27 @@ export default function AllDocTable() {
   };
 
   // Attribute functions for edit modal
-  const handleGetEditAttributes = async (id: string) => {
-    try {
-      const response = await getWithAuth(`attribute-by-category/${id}`);
-      const parsedAttributes = JSON.parse(response.attributes);
-      setEditAttributes(parsedAttributes);
-    } catch (error) {
-      console.error("Error getting attributes:", error);
-    }
-  };
-
-  const handleEditAttributeInputChange = (attribute: string, value: string) => {
-    setEditFormAttributeData((prevData) => {
-      const existingIndex = prevData.findIndex((item) => item.attribute === attribute);
-      if (existingIndex !== -1) {
-        const updatedData = [...prevData];
-        updatedData[existingIndex] = { attribute, value };
-        return updatedData;
+    const handleGetEditAttributes = async (id: string) => {
+      try {
+        const response = await getWithAuth(`attribute-by-category/${id}`);
+        const parsedAttributes = JSON.parse(response.attributes);
+        setEditAttributes(parsedAttributes);
+      } catch (error) {
+        console.error("Error getting attributes:", error);
       }
-      return [...prevData, { attribute, value }];
-    });
-  };
+    };
+  
+    const handleEditAttributeInputChange = (attribute: string, value: string) => {
+      setEditFormAttributeData((prevData) => {
+        const existingIndex = prevData.findIndex((item) => item.attribute === attribute);
+        if (existingIndex !== -1) {
+          const updatedData = [...prevData];
+          updatedData[existingIndex] = { attribute, value };
+          return updatedData;
+        }
+        return [...prevData, { attribute, value }];
+      });
+    };
 
 
   // functions with api calls
@@ -2293,6 +2293,30 @@ export default function AllDocTable() {
                 }
               ></textarea>
             </div>
+            {/* Attributes Section */}
+            {editAttributes.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-2" style={{ fontSize: "14px", fontWeight: "bold" }}>
+                  Attributes
+                </p>
+                {editAttributes.map((attribute, index) => {
+                  const existingValue = editFormAttributeData.find((item) => item.attribute === attribute)?.value || "";
+                  return (
+                    <div key={index} className="mb-2">
+                      <p className="mb-1" style={{ fontSize: "14px" }}>
+                        {attribute}
+                      </p>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={existingValue}
+                        onChange={(e) => handleEditAttributeInputChange(attribute, e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <div className="col-12 col-lg-6 d-flex flex-column ps-lg-2">
               <p className="mb-1 text-start w-100" style={{ fontSize: "14px" }}>
                 Meta tags

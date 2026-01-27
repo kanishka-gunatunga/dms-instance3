@@ -2577,6 +2577,30 @@ export default function AllDocTable() {
                 }
               ></textarea>
             </div>
+            {/* Attributes Section */}
+            {editAttributes.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-2" style={{ fontSize: "14px", fontWeight: "bold" }}>
+                  Attributes
+                </p>
+                {editAttributes.map((attribute, index) => {
+                  const existingValue = editFormAttributeData.find((item) => item.attribute === attribute)?.value || "";
+                  return (
+                    <div key={index} className="mb-2">
+                      <p className="mb-1" style={{ fontSize: "14px" }}>
+                        {attribute}
+                      </p>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={existingValue}
+                        onChange={(e) => handleEditAttributeInputChange(attribute, e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <div className="col-12 col-lg-6 d-flex flex-column ps-lg-2">
               <p className="mb-1 text-start w-100" style={{ fontSize: "14px" }}>
                 Meta tags
