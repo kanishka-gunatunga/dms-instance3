@@ -12,6 +12,7 @@ import { MdOutlineCancel } from "react-icons/md";
 import Link from "next/link";
 import { Checkbox, Divider } from "antd";
 import ToastMessage from "@/components/common/Toast";
+import { SectorDropdownItem } from "@/types/types";
 
 
 export default function AllDocTable() {
@@ -20,7 +21,7 @@ export default function AllDocTable() {
     const [toastType, setToastType] = useState<"success" | "error">("success");
     const [toastMessage, setToastMessage] = useState("");
     const [error, setError] = useState("");
-    const [allSectors, setAllSectors] = useState<any[]>([]);
+    const [allSectors, setAllSectors] = useState<SectorDropdownItem[]>([]);
     const [selectedSectorIds, setSelectedSectorIds] = useState<number[]>([]);
     const [activeSectorId, setActiveSectorId] = useState<number | null>(null);
     const [sectorPermissions, setSectorPermissions] = useState<{ [key: number]: { [group: string]: string[] } }>({});

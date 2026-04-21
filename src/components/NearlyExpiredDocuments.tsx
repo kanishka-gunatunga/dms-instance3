@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Button, Calendar, Tag, message, Modal as AntModal} from 'antd';
 import {Modal} from "react-bootstrap";
 import {BsEye, BsDownload, BsArrowRepeat} from 'react-icons/bs';
@@ -112,9 +112,9 @@ const NearlyExpiredDocuments: React.FC<NearlyExpiredDocumentsProps> = ({
             handleGetViewData(selectedDocumentId);
             // console.log("View Document : ", viewDocument)
         }
-    }, [modalStates.viewModel, selectedDocumentId]);
+    }, [modalStates.viewModel, selectedDocumentId, handleGetViewData]);
 
-    const handleGetViewData = async (id: number) => {
+    const handleGetViewData = useCallback(async (id: number) => {
         try {
             const response = await getWithAuth(`view-document/${id}/${userId}`);
             const data = response.data;
@@ -123,7 +123,7 @@ const NearlyExpiredDocuments: React.FC<NearlyExpiredDocumentsProps> = ({
         } catch (error) {
             console.error("Error :", error);
         }
-    };
+    }, [userId]);
 
     const handleCloseModal = (modalName: keyof typeof modalStates) => {
         setModalStates((prev) => ({...prev, [modalName]: false}));

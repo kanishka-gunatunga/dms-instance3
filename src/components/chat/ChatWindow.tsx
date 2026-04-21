@@ -4,7 +4,7 @@
 import { ChatAction, useChat } from '@/context/ChatContext';
 import { CgClose } from 'react-icons/cg';
 import chatView from '@/styles/chatView.module.css'
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BotMessage from './BotMessage';
 import UserMessage from './UserMessage';
 import { IoSend } from 'react-icons/io5';
@@ -222,7 +222,7 @@ export default function ChatWindow() {
   };
 
 
-  const autoSummarize = async () => {
+  const autoSummarize = useCallback(async () => {
     updateMessages([{ type: 'system', text: 'Summarizing the document...' }]);
     setLoading(true);
     try {
@@ -238,9 +238,9 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [documentId]);
 
-  const toneCheck = async () => {
+  const toneCheck = useCallback(async () => {
     updateMessages([{ type: 'system', text: 'Sentiment analyzing...' }]);
     setLoading(true);
     try {
@@ -256,9 +256,9 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [documentId]);
 
-  const translate = async () => {
+  const translate = useCallback(async () => {
     updateMessages([{ type: 'system', text: 'Translating text...' }]);
     setLoading(true);
     try {
@@ -277,7 +277,7 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !action) return;
@@ -300,7 +300,7 @@ export default function ChatWindow() {
         [action]: [...(prev[action] ?? []), systemMessage],
       }));
     }
-  }, [isOpen, action]);
+  }, [isOpen, action, autoSummarize, toneCheck, translate]);
 
   useEffect(() => {
     if (!isOpen) {

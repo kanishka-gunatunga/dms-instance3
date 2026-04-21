@@ -13,6 +13,18 @@ import Link from "next/link";
 import { Checkbox, Divider } from "antd";
 import { useParams } from 'next/navigation';
 import ToastMessage from "@/components/common/Toast";
+import { SectorDropdownItem } from "@/types/types";
+
+interface PermissionItem {
+    group: string;
+    items: string[];
+}
+
+interface SectorBlock {
+    sector_id: number;
+    sector_name: string;
+    permissions: PermissionItem[];
+}
 
 interface Props {
     params: { id: string };
@@ -28,14 +40,14 @@ interface Props {
     const [toastType, setToastType] = useState<"success" | "error">("success");
     const [toastMessage, setToastMessage] = useState("");
     const [error, setError] = useState("");
-    const [allSectors, setAllSectors] = useState<any[]>([]);
+    const [allSectors, setAllSectors] = useState<SectorDropdownItem[]>([]);
     const [selectedSectorIds, setSelectedSectorIds] = useState<number[]>([]);
     const [activeSectorId, setActiveSectorId] = useState<number | null>(null);
     const [sectorPermissions, setSectorPermissions] = useState<{ [key: number]: { [group: string]: string[] } }>({});
     const [isAdmin, setIsAdmin] = useState(false);
     const [formSubmitted, setFormSubmitted] = useState(false);
 
-    const loadSectors = async () => {
+    const loadSectors = React.useCallback(async () => {
         try {
             const response = await getWithAuth('all-sectors');
             if (response && Array.isArray(response)) {
@@ -44,9 +56,9 @@ interface Props {
         } catch (err) {
             console.error("Failed to load sectors", err);
         }
-    };
+    }, []);
 
-    const fetchRoleData = async (id: string) => {
+    const fetchRoleData = React.useCallback(async (id: string) => {
         try {
             const response = await getWithAuth(`role-details/${id}`);
 
@@ -68,21 +80,18 @@ interface Props {
                 if (Array.isArray(parsedPermissions)) {
                     if (parsedPermissions.length > 0 && (parsedPermissions[0].sector_id !== undefined || parsedPermissions[0].sector_name !== undefined)) {
                         // New nested structure
-                        parsedPermissions.forEach((sectorBlock: any) => {
+                        parsedPermissions.forEach((sectorBlock: SectorBlock) => {
                             const sectorId = sectorBlock.sector_id;
                             newSelectedSectorIds.push(sectorId);
                             
                             const groups: { [key: string]: string[] } = {};
-                            (sectorBlock.permissions || []).forEach((p: any) => {
+                            (sectorBlock.permissions || []).forEach((p: PermissionItem) => {
                                 groups[p.group] = p.items;
                             });
                             newSectorPermissions[sectorId] = groups;
                         });
                     } else {
-                        // Legacy flat structure - we'll handle this as "Default" or map to all sectors?
-                        // For now, let's just make it easier for the user by not selecting any sector if it's flat,
-                        // or better, find a way to let them map it.
-                        // Actually, let's keep it as is but it won't be editable until they select a sector.
+                        // Legacy flat structure
                     }
                 }
 
@@ -95,18 +104,18 @@ interface Props {
         } catch (error) {
             console.error("Failed to fetch Role data:", error);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         setMounted(true);
         loadSectors();
-    }, []);
+    }, [loadSectors]);
 
     useEffect(() => {
         if (id && typeof id === "string" && mounted) {
             fetchRoleData(id);
         }
-    }, [id, mounted]);
+    }, [id, mounted, fetchRoleData]);
 
     const isAuthenticated = useAuth();
 
