@@ -15,9 +15,9 @@ import { useUserContext } from "@/context/userContext";
 import { formatDateForSQL } from "@/utils/commonFunctions";
 import {
   fetchAndMapUserData,
-  fetchCategoryData,
+  fetchCategoriesBySector,
   fetchRoleData,
-  fetchSectors,
+  fetchSectorsByUserRole,
 } from "@/utils/dataFetchFunctions";
 import {
   CategoryDropdownItem,
@@ -104,10 +104,10 @@ export default function AllDocTable() {
 
 
   useEffect(() => {
-    fetchCategoryData(setCategoryDropDownData);
+    // fetchCategoryData(setCategoryDropDownData); // Removed global fetch
     fetchRoleData(setRoleDropDownData);
     fetchAndMapUserData(setUserDropDownData);
-    fetchSectors(setSectorDropDownData)
+    fetchSectorsByUserRole(setSectorDropDownData);
   }, []);
 
 
@@ -123,6 +123,14 @@ export default function AllDocTable() {
 
   const handleSectorSelect = (sectorId: string) => {
     setSelectedSectorId(sectorId);
+    setSelectedCategoryId(""); // Clear existing category
+    setAttributes([]); // Clear attributes
+    setFormAttributeData([]); // Clear attribute form data
+    if (sectorId) {
+      fetchCategoriesBySector(sectorId, setCategoryDropDownData);
+    } else {
+      setCategoryDropDownData([]);
+    }
   };
 
 
@@ -462,10 +470,11 @@ export default function AllDocTable() {
                             ? categoryDropDownData.find(
                                 (item) => item.id.toString() === selectedCategoryId
                               )?.category_name
-                            : "Select Category"
+                            : (selectedSectorId ? "Select Category" : "Select Sector First")
                         }
                         className="custom-dropdown-text-start text-start w-100"
                         onSelect={(value) => handleCategorySelect(value || "")}
+                        disabled={!selectedSectorId}
                       >
                         {categoryDropDownData
                           .filter((category) => category.parent_category === "none") // Get only parent categories

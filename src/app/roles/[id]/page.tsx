@@ -28,53 +28,90 @@ interface Props {
     const [toastType, setToastType] = useState<"success" | "error">("success");
     const [toastMessage, setToastMessage] = useState("");
     const [error, setError] = useState("");
-    const [selectedGroups, setSelectedGroups] = useState<{ [key: string]: string[] }>({});
+    const [allSectors, setAllSectors] = useState<any[]>([]);
+    const [selectedSectorIds, setSelectedSectorIds] = useState<number[]>([]);
+    const [activeSectorId, setActiveSectorId] = useState<number | null>(null);
+    const [sectorPermissions, setSectorPermissions] = useState<{ [key: number]: { [group: string]: string[] } }>({});
     const [isAdmin, setIsAdmin] = useState(false);
+    const [formSubmitted, setFormSubmitted] = useState(false);
+
+    const loadSectors = async () => {
+        try {
+            const response = await getWithAuth('all-sectors');
+            if (response && Array.isArray(response)) {
+                setAllSectors(response);
+            }
+        } catch (err) {
+            console.error("Failed to load sectors", err);
+        }
+    };
 
     const fetchRoleData = async (id: string) => {
         try {
             const response = await getWithAuth(`role-details/${id}`);
 
-            if (response.status === "fail") {
-            } else {
+            if (response.status !== "fail") {
                 const roleData = response;
                 setRoleName(roleData.role_name);
-                setRoleName(response.role_name);
                 setIsAdmin(roleData.is_admin === 1 || roleData.is_admin === "1");
-                const parsedPermissions = JSON.parse(roleData.permissions || "[]");
+                
+                let parsedPermissions = [];
+                try {
+                    parsedPermissions = JSON.parse(roleData.permissions || "[]");
+                } catch (e) {
+                    console.error("Failed to parse permissions JSON", e);
+                }
 
-                const initialSelectedGroups: { [key: string]: string[] } = {};
-                parsedPermissions.forEach((permission: { group: string; items: string[] }) => {
-                    initialSelectedGroups[permission.group] = permission.items;
-                });
+                const newSectorPermissions: { [key: number]: { [group: string]: string[] } } = {};
+                const newSelectedSectorIds: number[] = [];
 
-                setSelectedGroups(initialSelectedGroups);
+                if (Array.isArray(parsedPermissions)) {
+                    if (parsedPermissions.length > 0 && (parsedPermissions[0].sector_id !== undefined || parsedPermissions[0].sector_name !== undefined)) {
+                        // New nested structure
+                        parsedPermissions.forEach((sectorBlock: any) => {
+                            const sectorId = sectorBlock.sector_id;
+                            newSelectedSectorIds.push(sectorId);
+                            
+                            const groups: { [key: string]: string[] } = {};
+                            (sectorBlock.permissions || []).forEach((p: any) => {
+                                groups[p.group] = p.items;
+                            });
+                            newSectorPermissions[sectorId] = groups;
+                        });
+                    } else {
+                        // Legacy flat structure - we'll handle this as "Default" or map to all sectors?
+                        // For now, let's just make it easier for the user by not selecting any sector if it's flat,
+                        // or better, find a way to let them map it.
+                        // Actually, let's keep it as is but it won't be editable until they select a sector.
+                    }
+                }
 
+                setSectorPermissions(newSectorPermissions);
+                setSelectedSectorIds(newSelectedSectorIds);
+                if (newSelectedSectorIds.length > 0) {
+                    setActiveSectorId(newSelectedSectorIds[0]);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch Role data:", error);
         }
     };
+
     useEffect(() => {
         setMounted(true);
+        loadSectors();
     }, []);
 
     useEffect(() => {
-
-        if (id && typeof id === "string") {
-            console.log(`Editing Role with id: ${id}`);
+        if (id && typeof id === "string" && mounted) {
             fetchRoleData(id);
-        } else {
-            console.log("ID is not a string or is missing");
         }
-    }, [id]);
+    }, [id, mounted]);
 
     const isAuthenticated = useAuth();
 
-
     if (!mounted || !id) {
         return <LoadingSpinner />;
-
     }
 
     if (!isAuthenticated) {
@@ -103,51 +140,76 @@ interface Props {
         { name: "Page Helpers", items: ["Manage Page Helper"] },
     ];
 
+    // Get permissions for active sector
+    const selectedGroups = activeSectorId ? (sectorPermissions[activeSectorId] || {}) : {};
+
+    const setSelectedGroupsForActiveSector = (updater: (prev: { [key: string]: string[] }) => { [key: string]: string[] }) => {
+        if (!activeSectorId) return;
+        setSectorPermissions(prev => ({
+            ...prev,
+            [activeSectorId]: updater(prev[activeSectorId] || {})
+        }));
+    };
+
     const handleSelectAll = (checked: boolean) => {
+        if (!activeSectorId) return;
         if (checked) {
             const updatedGroups: { [key: string]: string[] } = {};
-
             allGroups.forEach((group) => {
                 updatedGroups[group.name] = group.items;
             });
-
-            setSelectedGroups(updatedGroups);
+            setSelectedGroupsForActiveSector(() => updatedGroups);
         } else {
-            setSelectedGroups({});
+            setSelectedGroupsForActiveSector(() => ({}));
         }
     };
 
     const handleGroupSelect = (checked: boolean, groupName: string, groupItems: string[]) => {
-        setSelectedGroups((prev) => {
-            const updatedGroups: { [key: string]: string[] } = { ...prev };
-
+        if (!activeSectorId) return;
+        setSelectedGroupsForActiveSector((prev) => {
+            const updatedGroups = { ...prev };
             if (checked) {
                 updatedGroups[groupName] = groupItems;
             } else {
                 delete updatedGroups[groupName];
             }
-
             return updatedGroups;
         });
     };
 
     const handleIndividualSelect = (groupName: string, value: string, checked: boolean) => {
-        setSelectedGroups((prev) => {
-            const updatedGroups: { [key: string]: string[] } = { ...prev };
+        if (!activeSectorId) return;
+        setSelectedGroupsForActiveSector((prev) => {
+            const updatedGroups = { ...prev };
             const groupItems = updatedGroups[groupName] || [];
-
             if (checked) {
                 updatedGroups[groupName] = [...groupItems, value];
             } else {
                 updatedGroups[groupName] = groupItems.filter((item) => item !== value);
-
                 if (updatedGroups[groupName].length === 0) {
                     delete updatedGroups[groupName];
                 }
             }
-
             return updatedGroups;
         });
+    };
+
+    const handleSectorToggle = (sectorId: number, checked: boolean) => {
+        if (checked) {
+            setSelectedSectorIds(prev => [...prev, sectorId]);
+            if (!activeSectorId) setActiveSectorId(sectorId);
+        } else {
+            setSelectedSectorIds(prev => prev.filter(id => id !== sectorId));
+            if (activeSectorId === sectorId) {
+                const remaining = selectedSectorIds.filter(id => id !== sectorId);
+                setActiveSectorId(remaining.length > 0 ? remaining[0] : null);
+            }
+            setSectorPermissions(prev => {
+                const updated = { ...prev };
+                delete updated[sectorId];
+                return updated;
+            });
+        }
     };
 
 

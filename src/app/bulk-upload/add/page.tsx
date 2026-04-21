@@ -16,7 +16,7 @@ import Link from "next/link";
 import { Dropdown, DropdownButton, Form, Modal, Pagination, Tab, Table, Tabs } from "react-bootstrap";
 import { useRouter } from "next/navigation";
 import { CategoryDropdownItem, DocumentData, FtpAccDropdownItem, SectorDropdownItem } from "@/types/types";
-import { fetchCategoryData, fetchFtpAccounts, fetchSectors } from "@/utils/dataFetchFunctions";
+import { fetchCategoriesBySector, fetchFtpAccounts, fetchSectorsByUserRole } from "@/utils/dataFetchFunctions";
 import { Button, Checkbox, Progress } from "antd";
 import { FaEllipsisV, FaShareAlt } from "react-icons/fa";
 import Paragraph from "@/components/common/Paragraph";
@@ -121,10 +121,17 @@ export default function AllDocTable() {
   };
   const handleSectorSelect = (sectorId: string) => {
     setSelectedSectorId(sectorId);
+    setSelectedCategoryId(""); // Clear category
     setExcelData((prevData) => ({
       ...prevData,
       sector_category: sectorId,
+      category: "", // Clear category in excelData
     }));
+    if (sectorId) {
+      fetchCategoriesBySector(sectorId, setCategoryDropDownData);
+    } else {
+      setCategoryDropDownData([]);
+    }
   };
 
   const handleInputChange = (e: { target: { id: any; value: any; }; }) => {
@@ -177,10 +184,17 @@ export default function AllDocTable() {
 
   const handleSectorSelectLocal = (sectorId: string) => {
     setSelectedSectorIdLocal(sectorId);
+    setSelectedCategoryIdLocal(""); // Clear category
     setExcelDataLocal((prevData) => ({
       ...prevData,
       sector_category: sectorId,
+      category: "", // Clear category in excelDataLocal
     }));
+    if (sectorId) {
+      fetchCategoriesBySector(sectorId, setCategoryDropDownDataLocal);
+    } else {
+      setCategoryDropDownDataLocal([]);
+    }
   };
 
   const handleInputChangeLocal = (e: { target: { id: any; value: any; }; }) => {
@@ -201,10 +215,10 @@ export default function AllDocTable() {
 
 
   useEffect(() => {
-    fetchCategoryData(setCategoryDropDownData);
-    fetchSectors(setSectorDropDownData)
-    fetchCategoryData(setCategoryDropDownDataLocal);
-    fetchSectors(setSectorDropDownDataLocal)
+    // fetchCategoryData(setCategoryDropDownData);
+    // fetchCategoryData(setCategoryDropDownDataLocal);
+    fetchSectorsByUserRole(setSectorDropDownData);
+    fetchSectorsByUserRole(setSectorDropDownDataLocal);
   }, []);
 
   useEffect(() => {
@@ -658,10 +672,11 @@ export default function AllDocTable() {
                                 ? categoryDropDownDataLocal.find(
                                     (item) => item.id.toString() === selectedCategoryIdLocal
                                   )?.category_name
-                                : "Select Category"
+                                : (selectedSectorIdLocal ? "Select Category" : "Select Sector First")
                             }
                             className="custom-dropdown-text-start text-start w-100"
                             onSelect={(value) => handleCategorySelectLocal(value || "")}
+                            disabled={!selectedSectorIdLocal}
                           >
                             {categoryDropDownDataLocal
                               .filter((category) => category.parent_category === "none") 
@@ -920,10 +935,11 @@ export default function AllDocTable() {
                                 ? categoryDropDownData.find(
                                     (item) => item.id.toString() === selectedCategoryId
                                   )?.category_name
-                                : "Select Category"
+                                : (selectedSectorId ? "Select Category" : "Select Sector First")
                             }
                             className="custom-dropdown-text-start text-start w-100"
                             onSelect={(value) => handleCategorySelect(value || "")}
+                            disabled={!selectedSectorId}
                           >
                             {categoryDropDownData
                               .filter((category) => category.parent_category === "none")

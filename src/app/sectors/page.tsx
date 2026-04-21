@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Tree, Modal, Input, Button } from 'antd';
+import { Tree, Modal, Input, Button, Select } from 'antd';
 import type { TreeDataNode, TreeProps } from 'antd';
 import { deleteWithAuth, getWithAuth, postWithAuth } from '@/utils/apiClient';
 import Heading from '@/components/common/Heading';
@@ -24,6 +24,8 @@ const CategoryManagement: React.FC = () => {
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [categoryName, setCategoryName] = useState('');
   const [parentId, setParentId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const fetchRootNodes = async () => {
     try {
@@ -58,8 +60,18 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const data = await getWithAuth("categories");
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to fetch categories', error);
+    }
+  };
+
   useEffect(() => {
     fetchRootNodes();
+    fetchCategories();
   }, []);
 
   const handleAddNode = async () => {
@@ -67,8 +79,10 @@ const CategoryManagement: React.FC = () => {
       const formData = new FormData();
       formData.append('parent_sector', parentId || 'none');
       formData.append('sector_name', categoryName);
+      formData.append('category_ids', JSON.stringify(selectedCategories));
       await postWithAuth('add-sector', formData);
       setModalVisible(false);
+      setSelectedCategories([]);
       fetchRootNodes();
     } catch (error) {
       console.error('Failed to add node', error);
@@ -81,8 +95,10 @@ const CategoryManagement: React.FC = () => {
       const formData = new FormData();
       formData.append('sector_name', categoryName);
       formData.append('parent_sector', parentId || 'none');
+      formData.append('category_ids', JSON.stringify(selectedCategories));
       await postWithAuth(`sector-details/${selectedKey}`, formData);
       setModalVisible(false);
+      setSelectedCategories([]);
       fetchRootNodes();
     } catch (error) {
       console.error('Failed to edit node', error);
@@ -111,11 +127,15 @@ const CategoryManagement: React.FC = () => {
     setSelectedKey(key);
     setParentId(parentKey);
     setCategoryName('');
+    setSelectedCategories([]);
   
     if (mode === 'edit' && key) {
       try {
         const data = await getWithAuth(`sector-details/${key}`);
         setCategoryName(data.sector_name); 
+        if (data.categories) {
+          setSelectedCategories(data.categories.map((cat: any) => cat.id.toString()));
+        }
       } catch (error) {
         console.error('Failed to fetch sector details', error);
       }
@@ -179,6 +199,20 @@ const CategoryManagement: React.FC = () => {
                 placeholder="Enter category name"
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
+                className="mb-3"
+              />
+              <p className="mb-1">Select Categories:</p>
+              <Select
+                mode="multiple"
+                allowClear
+                placeholder="Assign categories to this sector"
+                className="w-100"
+                value={selectedCategories}
+                onChange={(value) => setSelectedCategories(value)}
+                options={categories.map((cat: any) => ({
+                  label: cat.category_name,
+                  value: cat.id.toString(),
+                }))}
               />
             </Modal>
           </div>

@@ -50,21 +50,13 @@ export default function AllDocTable({ params }: Props) {
   );
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
-  const [selectedSectorId, setSelectedSectorId] = useState<string>("");
-  const [sectorDropDownData, setSectorDropDownData] = useState<
-    SectorDropdownItem[]
-  >([]);
 
   const router = useRouter();
   const id = params?.id;
 
-  const handleSectorSelect = (sectorId: string) => {
-    setSelectedSectorId(sectorId);
-  };
 
   useEffect(() => {
     fetchRoleData(setRoleDropDownData);
-    fetchSectors(setSectorDropDownData)
   }, []);
 
   useEffect(() => {
@@ -76,7 +68,6 @@ export default function AllDocTable({ params }: Props) {
         setMobileNumber(response.user_details.mobile_no?.toString() || "");
         setEmail(response.email || "");
         const roleIds = parseRoles(response.role);
-        setSelectedSectorId(response.user_details.sector);
         setSelectedRoleIds(roleIds);
       } catch (error) {
         console.error("Failed to fetch profile data:", error);
@@ -135,7 +126,6 @@ export default function AllDocTable({ params }: Props) {
     if (!mobileNumber.trim()) newErrors.mobile_no = "Mobile number is required.";
     if (!email.trim()) newErrors.email = "Email is required.";
     if (selectedRoleIds.length === 0) newErrors.role = "Role is required.";
-    if (!selectedSectorId) newErrors.sector = "Sector is required.";
     return newErrors;
   };
   const handleSubmit = async () => {
@@ -152,7 +142,6 @@ export default function AllDocTable({ params }: Props) {
     formData.append("mobile_no", mobileNumber);
     formData.append("email", email);
     formData.append("role", JSON.stringify(selectedRoleIds));
-    formData.append("sector", selectedSectorId);
 
     try {
       const response = await postWithAuth(`user-details/${id}`, formData);
@@ -175,6 +164,7 @@ export default function AllDocTable({ params }: Props) {
       console.error("Error submitting form:", error);
     }
   };
+
 
   return (
     <>
@@ -291,45 +281,6 @@ export default function AllDocTable({ params }: Props) {
                   </div>
                 </div>
 
-              </div>
-              <div className="col-12 col-lg-6 d-flex flex-column">
-                <p className="mb-1 text-start w-100" style={{ fontSize: "14px" }}>
-                  Sector
-                </p>
-                <div className="d-flex flex-column position-relative">
-                  <DropdownButton
-                    id="dropdown-category-button"
-                    title={
-                      selectedSectorId
-                        ? sectorDropDownData.find(
-                          (item) => item.id.toString() === selectedSectorId
-                        )?.sector_name
-                        : "Select Sector"
-                    }
-                    className="custom-dropdown-text-start text-start w-100"
-                    onSelect={(value) => handleSectorSelect(value || "")}
-                  >
-                    {sectorDropDownData.map((sector) => (
-                      <Dropdown.Item
-                        key={sector.id}
-                        eventKey={sector.id.toString()}
-                        style={{
-                          fontWeight:
-                            sector.parent_sector === "none"
-                              ? "bold"
-                              : "normal",
-                          paddingLeft:
-                            sector.parent_sector === "none"
-                              ? "10px"
-                              : "20px",
-                        }}
-                      >
-                        {sector.sector_name}
-                      </Dropdown.Item>
-                    ))}
-                  </DropdownButton>
-                  {errors.sector && <div style={{ color: "red", fontSize: "12px" }}>{errors.sector}</div>}
-                </div>
               </div>
               <div className="d-flex"></div>
             </div>
