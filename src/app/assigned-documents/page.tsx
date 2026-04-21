@@ -1981,7 +1981,7 @@ export default function AllDocTable() {
                 <FaPlus className="me-1" /> Add Document
               </Link>
             )}
-            {hasPermission(permissions, "Reminder", "View Reminders", item?.sector_category) && (
+            {hasPermission(permissions, "Reminder", "View Reminders") && (
               <button
                 onClick={() => handleOpenModal("myReminderModel")}
                 className="reminderButton bg-danger text-white border border-danger rounded px-3 py-1"
@@ -2114,13 +2114,13 @@ export default function AllDocTable() {
                           className="no-caret position-static dropdown-toggle-bulk"
                           style={{ zIndex: "99999", padding: '0px !important', backgroundColor: "transparent", color: "#000" }}
                         >
-                          {/* {hasPermission(permissions, "All Documents", "Share Document", item?.sector_category) && (
+                          {/* {hasPermission(permissions, "All Documents", "Share Document") && (
                             <Dropdown.Item onClick={() => handleOpenModal("allDocShareModel")} className="py-2">
                               <IoShareSocial className="me-2" />
                               Share
                             </Dropdown.Item>
                           )} */}
-                          {hasPermission(permissions, "All Documents", "Delete Document", item?.sector_category) && (
+                          {hasPermission(permissions, "All Documents", "Delete Document") && (
                             <Dropdown.Item
                               onClick={() => handleOpenModal("deleteBulkFileModel")}
                               className="py-2"
@@ -5258,7 +5258,7 @@ export default function AllDocTable() {
                         paginatedDataReminder.map((item) => (
                           <tr key={item.id}>
                             <td className="d-flex flex-row">
-                              {hasPermission(permissions, "Reminder", "Edit Reminder", item?.sector_category) && (
+                              {hasPermission(permissions, "Reminder", "Edit Reminder") && (
                                 <button
                                   onClick={() => {
                                     handleOpenModal("reminderViewModel", item.id)
@@ -5269,7 +5269,7 @@ export default function AllDocTable() {
                                   <IoEye fontSize={16} />
                                 </button>
                               )}
-                              {hasPermission(permissions, "Reminder", "Delete Reminder", item?.sector_category) && (
+                              {hasPermission(permissions, "Reminder", "Delete Reminder") && (
                                 <button
                                   onClick={() => {
                                     handleOpenModal("reminderDeleteModel", item.id)
@@ -5762,7 +5762,7 @@ export default function AllDocTable() {
             </div>
 
             <div className="d-flex flex-wrap gap-3 py-3">
-              {hasPermission(permissions, "All Documents", "Edit Document", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Edit Document") && (
                 <button
                   onClick={() =>
                     handleOpenModal("editModel", viewDocument?.id, viewDocument?.name)
@@ -5773,7 +5773,7 @@ export default function AllDocTable() {
                   Edit
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Share Document", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Share Document") && (
                 <button onClick={() =>
                   handleOpenModal(
                     "shareDocumentModel",
@@ -5784,7 +5784,7 @@ export default function AllDocTable() {
                   Share
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Manage Sharable Link", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Manage Sharable Link") && (
                 <button onClick={() =>
                   handleGetShareableLinkModel(viewDocument?.id || 0)
                 }
@@ -5793,7 +5793,7 @@ export default function AllDocTable() {
                   Get Shareable Link
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Download Document", item?.sector_category) && viewDocument?.id && (
+              {hasPermission(permissions, "All Documents", "Download Document") && viewDocument?.id && (
                 <button
                   onClick={() => handleDownload(viewDocument?.id || 0, userId)}
                   className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1">
@@ -5839,7 +5839,7 @@ export default function AllDocTable() {
                 Comment
               </button>
 
-              {hasPermission(permissions, "All Documents", "Add Reminder", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Add Reminder") && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -5853,7 +5853,7 @@ export default function AllDocTable() {
                   Add Reminder
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Send Email", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Send Email") && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -5880,7 +5880,7 @@ export default function AllDocTable() {
                 Remove From Search
               </button>
 
-              {hasPermission(permissions, "All Documents", "Archive Document", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Archive Document") && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -5894,7 +5894,7 @@ export default function AllDocTable() {
                   Archive
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Delete Document", item?.sector_category) && (
+              {hasPermission(permissions, "All Documents", "Delete Document") && (
                 <button
                   onClick={() =>
                     handleOpenModal(

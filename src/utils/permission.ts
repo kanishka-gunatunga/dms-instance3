@@ -7,9 +7,10 @@ export const hasPermission = (
     sectorId?: number
   ): boolean => {
     // If it's the old flat structure or super_admin bypass (which might just pass {})
-    if (!permissions || (!permissions.globalPermissions && !permissions.sectorPermissions)) {
+    if (!permissions || (!('globalPermissions' in permissions) && !('sectorPermissions' in permissions))) {
         // Fallback to old behavior if it seems like a flat array/object
-        return permissions[group]?.includes(permission) || false;
+        const flatPermissions = permissions as Record<string, string[]>;
+        return flatPermissions[group]?.includes(permission) || false;
     }
 
     const { isAdmin, globalPermissions, sectorPermissions } = permissions as ParsedPermissions;
