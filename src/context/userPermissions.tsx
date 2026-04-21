@@ -56,7 +56,7 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const sectorPermissions: { [sectorId: number]: { [key: string]: string[] } } = {};
 
         // Parse the new structure
-        permissionBlocks.forEach((block: any) => {
+        permissionBlocks.forEach((block: { sector_id: number; permissions?: { group: string; items: string[] }[] }) => {
            const sectorId = block.sector_id;
            const blockPermissions: { [key: string]: string[] } = {};
            

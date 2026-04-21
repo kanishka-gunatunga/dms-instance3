@@ -1,7 +1,7 @@
 import { ParsedPermissions } from "@/context/userPermissions";
 
 export const hasPermission = (
-    permissions: ParsedPermissions | { [key: string]: string[] } | any,
+    permissions: ParsedPermissions | { [key: string]: string[] } | Record<string, unknown>,
     group: string,
     permission: string,
     sectorId?: number

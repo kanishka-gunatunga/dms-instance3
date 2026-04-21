@@ -128,7 +128,7 @@ interface Props {
         } catch (error) {
             console.error("Failed to fetch Role data:", error);
         }
-    }, [getWithAuth]);
+    }, []);
 
     useEffect(() => {
         setMounted(true);
