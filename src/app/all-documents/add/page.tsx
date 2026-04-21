@@ -450,8 +450,8 @@ export default function AllDocTable() {
             className="custom-scroll"
           >
             <div className="d-flex flex-column">
-              <div className="row row-cols-1 row-cols-lg-4 d-flex justify-content-around px-lg-3 mb-lg-3">
-                <div className="col d-flex flex-column  justify-content-center align-items-center p-0 px-3 px-lg-0">
+              <div className="row row-cols-1 row-cols-lg-5 d-flex justify-content-around px-lg-3 mb-lg-3">
+                <div className="col d-flex flex-column justify-content-center align-items-center p-0 px-3 px-lg-0">
                   <p
                     className="mb-1 text-start w-100"
                     style={{ fontSize: "14px" }}
@@ -480,6 +480,48 @@ export default function AllDocTable() {
                     onChange={(e) => setName(e.target.value)}
                   />
                   {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
+                </div>
+                <div className="col d-flex flex-column justify-content-center align-items-center p-0 ps-lg-2 px-3 px-lg-0">
+                  <p
+                    className="mb-1 text-start w-100"
+                    style={{ fontSize: "14px" }}
+                  >
+                    Sector
+                  </p>
+                  <DropdownButton
+                    id="dropdown-sector-button"
+                    title={
+                      selectedSectorId
+                        ? sectorDropDownData.find((item) => item.id.toString() === selectedSectorId)?.sector_name
+                        : "Select Sector"
+                    }
+                    className="custom-dropdown-text-start text-start w-100"
+                    onSelect={(value) => handleSectorSelect(value || "")}
+                  >
+                    {sectorDropDownData
+                      .filter((sector) => sector.parent_sector === "none")
+                      .map((parentSector) => (
+                        <React.Fragment key={parentSector.id}>
+                          <Dropdown.Item
+                            eventKey={parentSector.id.toString()}
+                            style={{ fontWeight: "bold", paddingLeft: "10px" }}
+                          >
+                            {parentSector.sector_name}
+                          </Dropdown.Item>
+                          {sectorDropDownData
+                            .filter((sector) => sector.parent_sector === parentSector.id.toString())
+                            .map((childSector) => (
+                              <Dropdown.Item
+                                key={childSector.id}
+                                eventKey={childSector.id.toString()}
+                                style={{ paddingLeft: "30px" }}
+                              >
+                                {childSector.sector_name}
+                              </Dropdown.Item>
+                            ))}
+                        </React.Fragment>
+                      ))}
+                  </DropdownButton>
                 </div>
                 <div className="col d-flex flex-column justify-content-center align-items-center p-0 ps-lg-2 px-3 px-lg-0">
                   <p
@@ -539,7 +581,7 @@ export default function AllDocTable() {
                     Storage
                   </p>
                   <DropdownButton
-                    id="dropdown-category-button"
+                    id="dropdown-storage-button"
                     title={storage || "Select"}
                     className="custom-dropdown-text-start text-start w-100"
                     onSelect={(value) => setStorage(value || "")}
@@ -993,53 +1035,6 @@ export default function AllDocTable() {
                 </div>
               </div>
               <div className="d-flex flex-column flex-lg-row w-100">
-                <div className="col-12 col-lg-6 d-flex flex-column">
-                  <div className="d-flex w-100 flex-column justify-content-center align-items-start p-1">
-                    <div className="d-flex flex-column w-100 pt-3">
-                      <p
-                        className="mb-1 text-start w-100"
-                        style={{ fontSize: "14px" }}
-                      >
-                        Sectors
-                      </p>
-                      <DropdownButton
-                        id="dropdown-category-button"
-                        title={
-                          selectedSectorId
-                            ? sectorDropDownData.find((item) => item.id.toString() === selectedSectorId)?.sector_name
-                            : "Select Sector"
-                        }
-                        className="custom-dropdown-text-start text-start w-100"
-                        onSelect={(value) => handleSectorSelect(value || "")}
-                      >
-                        {sectorDropDownData
-                          .filter((sector) => sector.parent_sector === "none")
-                          .map((parentSector) => (
-                            <React.Fragment key={parentSector.id}>
-                              <Dropdown.Item
-                                eventKey={parentSector.id.toString()}
-                                style={{ fontWeight: "bold", paddingLeft: "10px" }}
-                              >
-                                {parentSector.sector_name}
-                              </Dropdown.Item>
-                              {sectorDropDownData
-                                .filter((sector) => sector.parent_sector === parentSector.id.toString())
-                                .map((childSector) => (
-                                  <Dropdown.Item
-                                    key={childSector.id}
-                                    eventKey={childSector.id.toString()}
-                                    style={{ paddingLeft: "30px" }}
-                                  >
-                                    {childSector.sector_name}
-                                  </Dropdown.Item>
-                                ))}
-                            </React.Fragment>
-                          ))}
-                      </DropdownButton>
-
-                    </div>
-                  </div>
-                </div>
                 <div className="col-12 col-lg-6 d-flex flex-column justify-content-center">
                   <div className="d-flex w-100 flex-column justify-content-center align-items-start p-1">
                     <div className="d-flex flex-column w-100 pt-3">
@@ -1055,7 +1050,7 @@ export default function AllDocTable() {
                           className={`w-100`}
                           placeholder="Choose Expire Date"
                           onChange={(value, dateString) => {
-                            setUserEndDate(`${dateString}`)
+                            setEndDate(`${dateString}`)
                           }}
                           onOk={(value) => onExpireDateTimeOk(value, value?.format('YYYY-MM-DD HH:mm:ss') ?? '')}
                         />
