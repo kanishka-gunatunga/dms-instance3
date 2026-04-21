@@ -69,7 +69,13 @@ interface Props {
                 
                 let parsedPermissions = [];
                 try {
-                    parsedPermissions = JSON.parse(roleData.permissions || "[]");
+                    if (typeof roleData.permissions === 'string') {
+                        parsedPermissions = JSON.parse(roleData.permissions || "[]");
+                    } else if (Array.isArray(roleData.permissions)) {
+                        parsedPermissions = roleData.permissions;
+                    } else if (roleData.permissions) {
+                        parsedPermissions = [roleData.permissions];
+                    }
                 } catch (e) {
                     console.error("Failed to parse permissions JSON", e);
                 }
@@ -78,27 +84,40 @@ interface Props {
                 const newSelectedSectorIds: number[] = [];
 
                 if (Array.isArray(parsedPermissions)) {
-                    if (parsedPermissions.length > 0 && (parsedPermissions[0].sector_id !== undefined || parsedPermissions[0].sector_name !== undefined)) {
+                    if (parsedPermissions.length > 0 && (parsedPermissions[0].hasOwnProperty('sector_id') || parsedPermissions[0].hasOwnProperty('sector_name'))) {
                         // New nested structure
-                        parsedPermissions.forEach((sectorBlock: SectorBlock) => {
-                            const sectorId = sectorBlock.sector_id;
-                            if (sectorId !== 0) {
+                        parsedPermissions.forEach((sectorBlock: any) => {
+                            const sectorId = Number(sectorBlock.sector_id);
+                            if (sectorId !== 0 && !isNaN(sectorId)) {
                                 newSelectedSectorIds.push(sectorId);
                             }
                             
                             const groups: { [key: string]: string[] } = {};
-                            (sectorBlock.permissions || []).forEach((p: PermissionItem) => {
+                            (sectorBlock.permissions || []).forEach((p: any) => {
                                 groups[p.group] = p.items;
                             });
                             newSectorPermissions[sectorId] = groups;
                         });
+                    } else if (parsedPermissions.length > 0) {
+                        // Legacy flat structure - treat as "Global" (sectorId 0) for backward compatibility
+                        const groups: { [key: string]: string[] } = {};
+                        parsedPermissions.forEach((p: any) => {
+                            if (p.group && p.items) {
+                                groups[p.group] = p.items;
+                            }
+                        });
+                        newSectorPermissions[0] = groups;
+                        // If it's old structure, we often treat it as an admin-like or global role if no sectors were assigned
                     }
                 }
 
                 setSectorPermissions(newSectorPermissions);
                 setSelectedSectorIds(newSelectedSectorIds);
-                if (roleData.is_admin === 1 || roleData.is_admin === "1") {
-                   // Global admin
+                
+                if (roleData.is_admin === 1 || roleData.is_admin === "1" || (!isAdmin && newSelectedSectorIds.length === 0 && Object.keys(newSectorPermissions[0] || {}).length > 0)) {
+                   // If is_admin is set, or if we have permissions in sector 0 and no other sectors (legacy/admin fallback)
+                   if (roleData.is_admin === 1 || roleData.is_admin === "1") setIsAdmin(true); 
+                   // Otherwise we don't force isAdmin=true but they will see global permissions
                 } else if (newSelectedSectorIds.length > 0) {
                     setActiveSectorId(newSelectedSectorIds[0]);
                 }
