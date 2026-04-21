@@ -82,7 +82,9 @@ interface Props {
                         // New nested structure
                         parsedPermissions.forEach((sectorBlock: SectorBlock) => {
                             const sectorId = sectorBlock.sector_id;
-                            newSelectedSectorIds.push(sectorId);
+                            if (sectorId !== 0) {
+                                newSelectedSectorIds.push(sectorId);
+                            }
                             
                             const groups: { [key: string]: string[] } = {};
                             (sectorBlock.permissions || []).forEach((p: PermissionItem) => {
@@ -90,14 +92,14 @@ interface Props {
                             });
                             newSectorPermissions[sectorId] = groups;
                         });
-                    } else {
-                        // Legacy flat structure
                     }
                 }
 
                 setSectorPermissions(newSectorPermissions);
                 setSelectedSectorIds(newSelectedSectorIds);
-                if (newSelectedSectorIds.length > 0) {
+                if (roleData.is_admin === 1 || roleData.is_admin === "1") {
+                   // Global admin
+                } else if (newSelectedSectorIds.length > 0) {
                     setActiveSectorId(newSelectedSectorIds[0]);
                 }
             }
@@ -149,14 +151,16 @@ interface Props {
         { name: "Page Helpers", items: ["Manage Page Helper"] },
     ];
 
-    // Get permissions for active sector
-    const selectedGroups = activeSectorId ? (sectorPermissions[activeSectorId] || {}) : {};
+    // Get permissions for active sector or global if admin
+    const selectedGroups = isAdmin ? (sectorPermissions[0] || {}) : (activeSectorId ? (sectorPermissions[activeSectorId] || {}) : {});
 
     const setSelectedGroupsForActiveSector = (updater: (prev: { [key: string]: string[] }) => { [key: string]: string[] }) => {
-        if (!activeSectorId) return;
+        const sectorIdKey = isAdmin ? 0 : activeSectorId;
+        if (sectorIdKey === null && !isAdmin) return;
+        
         setSectorPermissions(prev => ({
             ...prev,
-            [activeSectorId]: updater(prev[activeSectorId] || {})
+            [sectorIdKey as number]: updater(prev[sectorIdKey as number] || {})
         }));
     };
 
@@ -187,7 +191,8 @@ interface Props {
     };
 
     const handleIndividualSelect = (groupName: string, value: string, checked: boolean) => {
-        if (!activeSectorId) return;
+        const sectorIdKey = isAdmin ? 0 : activeSectorId;
+        if (sectorIdKey === null && !isAdmin) return;
         setSelectedGroupsForActiveSector((prev) => {
             const updatedGroups = { ...prev };
             const groupItems = updatedGroups[groupName] || [];
@@ -236,9 +241,43 @@ interface Props {
         setError("");
 
         try {
+            let permissionsData = [];
+            
+            if (isAdmin) {
+                const groups = sectorPermissions[0] || {};
+                const itemsArray = Object.entries(groups).map(([group, items]) => ({
+                    group,
+                    items,
+                }));
+                permissionsData = [{
+                    sector_id: 0,
+                    sector_name: "All Sectors",
+                    permissions: itemsArray
+                }];
+            } else {
+                if (selectedSectorIds.length === 0) {
+                    setError("At least one sector must be selected.");
+                    return;
+                }
+                
+                permissionsData = selectedSectorIds.map(sectorId => {
+                    const sector = allSectors.find(s => s.id === sectorId);
+                    const groups = sectorPermissions[sectorId] || {};
+                    const itemsArray = Object.entries(groups).map(([group, items]) => ({
+                        group,
+                        items,
+                    }));
+                    return {
+                        sector_id: sectorId,
+                        sector_name: sector?.sector_name || "Unknown",
+                        permissions: itemsArray
+                    };
+                });
+            }
+
             const formData = new FormData();
             formData.append("role_name", roleName);
-            formData.append("permissions", JSON.stringify(selectedArray));
+            formData.append("permissions", JSON.stringify(permissionsData));
             formData.append("is_admin", isAdmin ? "1" : "0");
             const response = await postWithAuth(`role-details/${id}`, formData);
 
@@ -292,52 +331,96 @@ interface Props {
                                 </div>
                             )}
                         </div>
-                            <Checkbox  className="mb-2"
+                        <Checkbox  className="mb-2"
                                 checked={isAdmin}
                                 onChange={(e) => setIsAdmin(e.target.checked)}
                             >
                                 Enable Admin Dashboard
-                            </Checkbox>       
-                        <Heading text="Permission" color="#444" />
-                        <div className="mt-2">
-                            <Checkbox
-                                checked={Object.keys(selectedGroups).length === allGroups.length}
-                                indeterminate={
-                                    Object.keys(selectedGroups).length > 0 &&
-                                    Object.keys(selectedGroups).length < allGroups.length
-                                }
-                                onChange={(e) => handleSelectAll(e.target.checked)}
-                            >
-                                Select All
                             </Checkbox>
-                            <Divider />
 
-                            {allGroups.map((group, groupIndex) => (
-                                <div key={groupIndex} className="mb-4">
-                                    <Checkbox
-                                        checked={selectedGroups[group.name]?.length === group.items.length}
-                                        indeterminate={
-                                            selectedGroups[group.name]?.length > 0 &&
-                                            selectedGroups[group.name]?.length < group.items.length
-                                        }
-                                        onChange={(e) => handleGroupSelect(e.target.checked, group.name, group.items)}
-                                        style={{fontWeight:"700"}}
-                                    >
-                                        {group.name}
-                                    </Checkbox>
-                                    <div style={{ marginLeft: "20px" }}>
-                                        {group.items.map((item, itemIndex) => (
+                            {!isAdmin && (
+                                <>
+                                    <Heading text="Sectors" color="#444" />
+                                    <div className="d-flex flex-wrap gap-2 mb-3 mt-2">
+                                        {allSectors.map((sector) => (
                                             <Checkbox
-                                                key={itemIndex}
-                                                checked={selectedGroups[group.name]?.includes(item)}
-                                                onChange={(e) => handleIndividualSelect(group.name, item, e.target.checked)}
+                                                key={sector.id}
+                                                checked={selectedSectorIds.includes(sector.id)}
+                                                onChange={(e) => handleSectorToggle(sector.id, e.target.checked)}
                                             >
-                                                {item}
+                                                {sector.sector_name}
                                             </Checkbox>
                                         ))}
                                     </div>
-                                </div>
-                            ))}
+
+                                    {selectedSectorIds.length > 0 && (
+                                        <div className="mb-3">
+                                            <p className="mb-2" style={{ fontSize: "14px", fontWeight: "600" }}>Active Sector for Permissions:</p>
+                                            <div className="d-flex flex-wrap gap-2">
+                                                {selectedSectorIds.map(id => {
+                                                    const sector = allSectors.find(s => s.id === id);
+                                                    return (
+                                                        <button
+                                                            key={id}
+                                                            onClick={() => setActiveSectorId(id)}
+                                                            className={`btn btn-sm ${activeSectorId === id ? 'btn-primary' : 'btn-outline-primary'}`}
+                                                        >
+                                                            {sector?.sector_name}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                                   
+                        <Heading text={isAdmin ? "Global Permissions" : "Permissions"} color="#444" />
+                        <div className="mt-2">
+                            {(isAdmin || activeSectorId) ? (
+                                <>
+                                    <Checkbox
+                                        checked={Object.keys(selectedGroups).length === allGroups.length}
+                                        indeterminate={
+                                            Object.keys(selectedGroups).length > 0 &&
+                                            Object.keys(selectedGroups).length < allGroups.length
+                                        }
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                    >
+                                        Select All
+                                    </Checkbox>
+                                    <Divider />
+
+                                    {allGroups.map((group, groupIndex) => (
+                                        <div key={groupIndex} className="mb-4">
+                                            <Checkbox
+                                                checked={selectedGroups[group.name]?.length === group.items.length}
+                                                indeterminate={
+                                                    selectedGroups[group.name]?.length > 0 &&
+                                                    selectedGroups[group.name]?.length < group.items.length
+                                                }
+                                                onChange={(e) => handleGroupSelect(e.target.checked, group.name, group.items)}
+                                                style={{fontWeight:"700"}}
+                                            >
+                                                {group.name}
+                                            </Checkbox>
+                                            <div style={{ marginLeft: "20px" }}>
+                                                {group.items.map((item, itemIndex) => (
+                                                    <Checkbox
+                                                        key={itemIndex}
+                                                        checked={selectedGroups[group.name]?.includes(item)}
+                                                        onChange={(e) => handleIndividualSelect(group.name, item, e.target.checked)}
+                                                    >
+                                                        {item}
+                                                    </Checkbox>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <p className="text-muted">Please select a sector and click on it to set its specific permissions.</p>
+                            )}
                             <Divider />
 
                             <div className="d-flex flex-row"
