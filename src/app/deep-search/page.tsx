@@ -57,6 +57,7 @@ interface Category {
 }
 
 interface TableItem {
+  sector_category: number;
   id: number;
   name: string;
   category: Category;
@@ -1760,7 +1761,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   title={<FaEllipsisV />}
                   className="no-caret position-static custom-dropdown"
                 >
-                   {hasPermission(permissions, "All Documents", "View Documents") && (
+                   {hasPermission(permissions, "All Documents", "View Documents", item?.sector_category) && (
                   <Dropdown.Item
                     className="py-2"
                     onClick={() => handleOpenModal("viewModel", item.id, item.name)}
@@ -4576,7 +4577,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
             </div>
 
             <div className="d-flex flex-wrap gap-3 py-3">
-              {hasPermission(permissions, "All Documents", "Edit Document") && (
+              {hasPermission(permissions, "All Documents", "Edit Document", item?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal("editModel", viewDocument?.id, viewDocument?.name)
@@ -4587,7 +4588,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Edit
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Share Document") && (
+              {hasPermission(permissions, "All Documents", "Share Document", item?.sector_category) && (
                 <button onClick={() =>
                   handleOpenModal(
                     "shareDocumentModel",
@@ -4598,7 +4599,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Share
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Manage Sharable Link") && (
+              {hasPermission(permissions, "All Documents", "Manage Sharable Link", item?.sector_category) && (
                 <button onClick={() =>
                   handleGetShareableLinkModel(viewDocument?.id || 0)
                 }
@@ -4607,7 +4608,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Get Shareable Link
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Download Document") && viewDocument?.id && (
+              {hasPermission(permissions, "All Documents", "Download Document", item?.sector_category) && viewDocument?.id && (
                 <button
                   onClick={() => handleDownload(viewDocument?.id || 0, userId)}
                   className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1">
@@ -4653,7 +4654,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                 Comment
               </button>
 
-              {hasPermission(permissions, "All Documents", "Add Reminder") && (
+              {hasPermission(permissions, "All Documents", "Add Reminder", item?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4667,7 +4668,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Add Reminder
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Send Email") && (
+              {hasPermission(permissions, "All Documents", "Send Email", item?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4694,7 +4695,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                 Remove From Search
               </button>
 
-              {hasPermission(permissions, "All Documents", "Archive Document") && (
+              {hasPermission(permissions, "All Documents", "Archive Document", item?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4708,7 +4709,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Archive
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Delete Document") && (
+              {hasPermission(permissions, "All Documents", "Delete Document", item?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(

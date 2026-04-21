@@ -39,6 +39,7 @@ interface Category {
 }
 
 interface TableItem {
+  sector_category: number;
   id: number;
   name: string;
   category: Category;
@@ -406,7 +407,7 @@ export default function AllDocTable() {
                             className="no-caret position-static"
                           >
 
-                            {/* {hasPermission(permissions, "Archived Documents", "Restore Document") && ( */}
+                            {/* {hasPermission(permissions, "Archived Documents", "Restore Document", item?.sector_category) && ( */}
                               <Dropdown.Item onClick={() =>
                                 handleOpenModal("modelRestore", item.id)
                               } className="py-2">
@@ -415,7 +416,7 @@ export default function AllDocTable() {
                               </Dropdown.Item>
                             {/* )} */}
 
-                            {/* {hasPermission(permissions, "Archived Documents", "Delete Document") && ( */}
+                            {/* {hasPermission(permissions, "Archived Documents", "Delete Document", item?.sector_category) && ( */}
                               <Dropdown.Item onClick={() =>
                                 handleOpenModal("modelDeletePermenent", item.id)
                               } className="py-2">
