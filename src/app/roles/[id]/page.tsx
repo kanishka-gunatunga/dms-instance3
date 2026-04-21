@@ -86,14 +86,14 @@ interface Props {
                 if (Array.isArray(parsedPermissions)) {
                     if (parsedPermissions.length > 0 && (parsedPermissions[0].hasOwnProperty('sector_id') || parsedPermissions[0].hasOwnProperty('sector_name'))) {
                         // New nested structure
-                        parsedPermissions.forEach((sectorBlock: any) => {
+                        parsedPermissions.forEach((sectorBlock: SectorBlock) => {
                             const sectorId = Number(sectorBlock.sector_id);
                             if (sectorId !== 0 && !isNaN(sectorId)) {
                                 newSelectedSectorIds.push(sectorId);
                             }
                             
                             const groups: { [key: string]: string[] } = {};
-                            (sectorBlock.permissions || []).forEach((p: any) => {
+                            (sectorBlock.permissions || []).forEach((p: PermissionItem) => {
                                 groups[p.group] = p.items;
                             });
                             newSectorPermissions[sectorId] = groups;
@@ -101,7 +101,7 @@ interface Props {
                     } else if (parsedPermissions.length > 0) {
                         // Legacy flat structure - treat as "Global" (sectorId 0) for backward compatibility
                         const groups: { [key: string]: string[] } = {};
-                        parsedPermissions.forEach((p: any) => {
+                        parsedPermissions.forEach((p: PermissionItem) => {
                             if (p.group && p.items) {
                                 groups[p.group] = p.items;
                             }
@@ -128,7 +128,7 @@ interface Props {
         } catch (error) {
             console.error("Failed to fetch Role data:", error);
         }
-    }, [id]);
+    }, [getWithAuth]);
 
     useEffect(() => {
         setMounted(true);
