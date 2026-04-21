@@ -20,11 +20,28 @@ export default function AllDocTable() {
     const [toastType, setToastType] = useState<"success" | "error">("success");
     const [toastMessage, setToastMessage] = useState("");
     const [error, setError] = useState("");
-    const [selectedGroups, setSelectedGroups] = useState<{ [key: string]: string[] }>({});
+    const [allSectors, setAllSectors] = useState<any[]>([]);
+    const [selectedSectorIds, setSelectedSectorIds] = useState<number[]>([]);
+    const [activeSectorId, setActiveSectorId] = useState<number | null>(null);
+    const [sectorPermissions, setSectorPermissions] = useState<{ [key: number]: { [group: string]: string[] } }>({});
     const [apiCallFailed, setApiCallFailed] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
 const [isAdmin, setIsAdmin] = useState(false);
     const isAuthenticated = useAuth();
+
+    React.useEffect(() => {
+        const loadSectors = async () => {
+            try {
+                const response = await getWithAuth('all-sectors');
+                if (response && Array.isArray(response)) {
+                    setAllSectors(response);
+                }
+            } catch (err) {
+                console.error("Failed to load sectors", err);
+            }
+        };
+        loadSectors();
+    }, []);
 
     if (!isAuthenticated) {
         return <LoadingSpinner />;
@@ -52,64 +69,87 @@ const [isAdmin, setIsAdmin] = useState(false);
         { name: "Page Helpers", items: ["Manage Page Helper"] },
     ];
     
+    // Get permissions for active sector
+    const selectedGroups = activeSectorId ? (sectorPermissions[activeSectorId] || {}) : {};
+
+    const setSelectedGroupsForActiveSector = (updater: (prev: { [key: string]: string[] }) => { [key: string]: string[] }) => {
+        if (!activeSectorId) return;
+        setSectorPermissions(prev => ({
+            ...prev,
+            [activeSectorId]: updater(prev[activeSectorId] || {})
+        }));
+    };
+
     const handleSelectAll = (checked: boolean) => {
+        if (!activeSectorId) return;
         if (checked) {
             const updatedGroups: { [key: string]: string[] } = {};
-
             allGroups.forEach((group) => {
                 updatedGroups[group.name] = group.items;
             });
-
-            setSelectedGroups(updatedGroups);
+            setSelectedGroupsForActiveSector(() => updatedGroups);
         } else {
-            setSelectedGroups({});
+            setSelectedGroupsForActiveSector(() => ({}));
         }
     };
 
     const handleGroupSelect = (checked: boolean, groupName: string, groupItems: string[]) => {
-        setSelectedGroups((prev) => {
-            const updatedGroups: { [key: string]: string[] } = { ...prev };
-
+        if (!activeSectorId) return;
+        setSelectedGroupsForActiveSector((prev) => {
+            const updatedGroups = { ...prev };
             if (checked) {
                 updatedGroups[groupName] = groupItems;
             } else {
                 delete updatedGroups[groupName];
             }
-
             return updatedGroups;
         });
     };
 
     const handleIndividualSelect = (groupName: string, value: string, checked: boolean) => {
-        setSelectedGroups((prev) => {
-            const updatedGroups: { [key: string]: string[] } = { ...prev };
+        if (!activeSectorId) return;
+        setSelectedGroupsForActiveSector((prev) => {
+            const updatedGroups = { ...prev };
             const groupItems = updatedGroups[groupName] || [];
-
             if (checked) {
                 updatedGroups[groupName] = [...groupItems, value];
             } else {
                 updatedGroups[groupName] = groupItems.filter((item) => item !== value);
-
                 if (updatedGroups[groupName].length === 0) {
                     delete updatedGroups[groupName];
                 }
             }
-
             return updatedGroups;
         });
     };
 
-
-    const selectedArray = Object.entries(selectedGroups).map(([group, items]) => ({
-        group,
-        items,
-    }));
+    const handleSectorToggle = (sectorId: number, checked: boolean) => {
+        if (checked) {
+            setSelectedSectorIds(prev => [...prev, sectorId]);
+            if (!activeSectorId) setActiveSectorId(sectorId);
+        } else {
+            setSelectedSectorIds(prev => prev.filter(id => id !== sectorId));
+            if (activeSectorId === sectorId) {
+                const remaining = selectedSectorIds.filter(id => id !== sectorId);
+                setActiveSectorId(remaining.length > 0 ? remaining[0] : null);
+            }
+            // Optional: clean up permissions for unselected sector
+            setSectorPermissions(prev => {
+                const updated = { ...prev };
+                delete updated[sectorId];
+                return updated;
+            });
+        }
+    };
 
     const handleAddRolePermission = async () => {
-
         if (formSubmitted) return;
         if (!roleName.trim()) {
             setError("Role name is required.");
+            return;
+        }
+        if (selectedSectorIds.length === 0) {
+            setError("At least one sector must be selected.");
             return;
         }
 
@@ -117,12 +157,25 @@ const [isAdmin, setIsAdmin] = useState(false);
         setApiCallFailed(false);
         setFormSubmitted(true);
         try {
+            const permissionsData = selectedSectorIds.map(sectorId => {
+                const sector = allSectors.find(s => s.id === sectorId);
+                const groups = sectorPermissions[sectorId] || {};
+                const itemsArray = Object.entries(groups).map(([group, items]) => ({
+                    group,
+                    items,
+                }));
+                return {
+                    sector_id: sectorId,
+                    sector_name: sector?.sector_name || "Unknown",
+                    permissions: itemsArray
+                };
+            });
+
             const formData = new FormData();
             formData.append("role_name", roleName);
-            formData.append("permissions", JSON.stringify(selectedArray));
+            formData.append("permissions", JSON.stringify(permissionsData));
             formData.append("is_admin", isAdmin ? "1" : "0");
             const response = await postWithAuth(`add-role`, formData);
-
 
             if (response.status === "success") {
                 setToastType("success");
@@ -137,14 +190,12 @@ const [isAdmin, setIsAdmin] = useState(false);
                 setTimeout(() => setShowToast(false), 5000);
                 setFormSubmitted(false);
             }
-
         } catch (error) {
             setToastType("error");
             setToastMessage("Failed to add role!");
             setShowToast(true);
             setTimeout(() => setShowToast(false), 5000);
             setFormSubmitted(false);
-            // console.error("Error adding role:", error);
         }
     };
 
