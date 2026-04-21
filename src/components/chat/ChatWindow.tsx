@@ -43,13 +43,13 @@ export default function ChatWindow() {
   });
   const currentMessages = chatHistories[action ?? 'qa'];
 
-  const updateMessages = (newMessages: Message[]) => {
+  const updateMessages = useCallback((newMessages: Message[]) => {
     if (!action) return;
     setChatHistories((prev) => ({
       ...prev,
       [action]: newMessages,
     }));
-  };
+  }, [action]);
 
   const handleClose = async () => {
     toggleChat();
@@ -238,7 +238,7 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  }, [documentId]);
+  }, [documentId, updateMessages]);
 
   const toneCheck = useCallback(async () => {
     updateMessages([{ type: 'system', text: 'Sentiment analyzing...' }]);
@@ -256,7 +256,7 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  }, [documentId]);
+  }, [documentId, updateMessages]);
 
   const translate = useCallback(async () => {
     updateMessages([{ type: 'system', text: 'Translating text...' }]);
@@ -277,7 +277,7 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateMessages]);
 
   useEffect(() => {
     if (!isOpen || !action) return;

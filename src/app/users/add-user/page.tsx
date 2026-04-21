@@ -318,7 +318,7 @@ export default function AllDocTable() {
               <IoSaveOutline fontSize={16} className="me-1" /> Save
             </button>
             <button
-              onClick={() => router.push("/users")}
+              onClick={() => window.location.href = "/users"}
               className="custom-icon-button button-danger text-white bg-danger px-3 py-1 rounded"
             >
               <MdOutlineCancel fontSize={16} className="me-1" /> Cancel

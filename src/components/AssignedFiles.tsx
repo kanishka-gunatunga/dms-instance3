@@ -146,13 +146,6 @@ const AssignedFiles: React.FC<AssignedFilesProps> = ({documents, userId}) => {
 
     const newFilesCount = documents.filter(doc => doc.is_new === 1).length;
 
-    useEffect(() => {
-        if (modalStates.viewModel && selectedDocumentId !== null) {
-            handleGetViewData(selectedDocumentId);
-            // console.log("View Document : ", viewDocument)
-        }
-    }, [modalStates.viewModel, selectedDocumentId, handleGetViewData]);
-
     const handleGetViewData = useCallback(async (id: number) => {
         try {
             const response = await getWithAuth(`view-document/${id}/${userId}`);
@@ -168,6 +161,13 @@ const AssignedFiles: React.FC<AssignedFilesProps> = ({documents, userId}) => {
             console.error("Error :", error);
         }
     }, [userId]);
+
+    useEffect(() => {
+        if (modalStates.viewModel && selectedDocumentId !== null) {
+            handleGetViewData(selectedDocumentId);
+            // console.log("View Document : ", viewDocument)
+        }
+    }, [modalStates.viewModel, selectedDocumentId, handleGetViewData]);
 
     const handleCloseModal = (modalName: keyof typeof modalStates) => {
         setModalStates((prev) => ({...prev, [modalName]: false}));

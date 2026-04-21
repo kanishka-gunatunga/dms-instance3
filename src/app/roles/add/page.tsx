@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import useAuth from "@/hooks/useAuth";
 import React, { useState } from "react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { postWithAuth } from "@/utils/apiClient";
+import { getWithAuth, postWithAuth } from "@/utils/apiClient";
 import { IoSave } from "react-icons/io5";
 import { MdOutlineCancel } from "react-icons/md";
 import Link from "next/link";
