@@ -114,11 +114,14 @@ interface Props {
                 setSectorPermissions(newSectorPermissions);
                 setSelectedSectorIds(newSelectedSectorIds);
                 
-                if (roleData.is_admin === 1 || roleData.is_admin === "1" || (!isAdmin && newSelectedSectorIds.length === 0 && Object.keys(newSectorPermissions[0] || {}).length > 0)) {
-                   // If is_admin is set, or if we have permissions in sector 0 and no other sectors (legacy/admin fallback)
-                   if (roleData.is_admin === 1 || roleData.is_admin === "1") setIsAdmin(true); 
-                   // Otherwise we don't force isAdmin=true but they will see global permissions
+                const isActuallyAdmin = roleData.is_admin === 1 || roleData.is_admin === "1";
+                const hasLegacyPermissions = newSelectedSectorIds.length === 0 && Object.keys(newSectorPermissions[0] || {}).length > 0;
+
+                if (isActuallyAdmin || hasLegacyPermissions) {
+                   setIsAdmin(true);
+                   setActiveSectorId(null);
                 } else if (newSelectedSectorIds.length > 0) {
+                    setIsAdmin(false);
                     setActiveSectorId(newSelectedSectorIds[0]);
                 }
             }
