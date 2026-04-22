@@ -103,7 +103,8 @@ interface ViewDocumentItem {
   attributes: string;
   type: string;
   url: string;
-  enable_external_file_view: number
+  enable_external_file_view: number;
+  sector_category: number;
 }
 
 interface CategoryDropdownItem {
@@ -4575,9 +4576,8 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                 ))}
               </p>
             </div>
-
             <div className="d-flex flex-wrap gap-3 py-3">
-              {hasPermission(permissions, "All Documents", "Edit Document") && (
+              {hasPermission(permissions, "All Documents", "Edit Document", viewDocument?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal("editModel", viewDocument?.id, viewDocument?.name)
@@ -4588,7 +4588,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Edit
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Share Document") && (
+              {hasPermission(permissions, "All Documents", "Share Document", viewDocument?.sector_category) && (
                 <button onClick={() =>
                   handleOpenModal(
                     "shareDocumentModel",
@@ -4599,7 +4599,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Share
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Manage Sharable Link") && (
+              {hasPermission(permissions, "All Documents", "Manage Sharable Link", viewDocument?.sector_category) && (
                 <button onClick={() =>
                   handleGetShareableLinkModel(viewDocument?.id || 0)
                 }
@@ -4608,7 +4608,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Get Shareable Link
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Download Document") && viewDocument?.id && (
+              {hasPermission(permissions, "All Documents", "Download Document", viewDocument?.sector_category) && viewDocument?.id && (
                 <button
                   onClick={() => handleDownload(viewDocument?.id || 0, userId)}
                   className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1">
@@ -4617,44 +4617,50 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                 </button>
               )}
 
-              <button
-                onClick={() =>
-                  handleOpenModal(
-                    "uploadNewVersionFileModel",
-                    viewDocument?.id, viewDocument?.name
-                  )
-                }
-                className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
-              >
-                <MdUpload className="me-2" />
-                Upload New Version file
-              </button>
-              <button
-                onClick={() =>
-                  handleOpenModal(
-                    "versionHistoryModel",
-                    viewDocument?.id, viewDocument?.name
-                  )
-                }
-                className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
-              >
-                <GoHistory className="me-2" />
-                Version History
-              </button>
-              <button
-                onClick={() =>
-                  handleOpenModal(
-                    "commentModel",
-                    viewDocument?.id, viewDocument?.name
-                  )
-                }
-                className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
-              >
-                <BiSolidCommentDetail className="me-2" />
-                Comment
-              </button>
+              {hasPermission(permissions, "All Documents", "Upload New Version file", viewDocument?.sector_category) && (
+                <button
+                  onClick={() =>
+                    handleOpenModal(
+                      "uploadNewVersionFileModel",
+                      viewDocument?.id, viewDocument?.name
+                    )
+                  }
+                  className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
+                >
+                  <MdUpload className="me-2" />
+                  Upload New Version file
+                </button>
+              )}
+              {hasPermission(permissions, "All Documents", "Version History", viewDocument?.sector_category) && (
+                <button
+                  onClick={() =>
+                    handleOpenModal(
+                      "versionHistoryModel",
+                      viewDocument?.id, viewDocument?.name
+                    )
+                  }
+                  className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
+                >
+                  <GoHistory className="me-2" />
+                  Version History
+                </button>
+              )}
+              {hasPermission(permissions, "All Documents", "Comment", viewDocument?.sector_category) && (
+                <button
+                  onClick={() =>
+                    handleOpenModal(
+                      "commentModel",
+                      viewDocument?.id, viewDocument?.name
+                    )
+                  }
+                  className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
+                >
+                  <BiSolidCommentDetail className="me-2" />
+                  Comment
+                </button>
+              )}
 
-              {hasPermission(permissions, "All Documents", "Add Reminder") && (
+              {hasPermission(permissions, "All Documents", "Add Reminder", viewDocument?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4668,7 +4674,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Add Reminder
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Send Email") && (
+              {hasPermission(permissions, "All Documents", "Send Email", viewDocument?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4682,20 +4688,22 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Send Email
                 </button>
               )}
-              <button
-                onClick={() =>
-                  handleOpenModal(
-                    "removeIndexingModel",
-                    viewDocument?.id, viewDocument?.name
-                  )
-                }
-                className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
-              >
-                <AiOutlineZoomOut className="me-2" />
-                Remove From Search
-              </button>
+              {hasPermission(permissions, "All Documents", "Remove From Search", viewDocument?.sector_category) && (
+                <button
+                  onClick={() =>
+                    handleOpenModal(
+                      "removeIndexingModel",
+                      viewDocument?.id, viewDocument?.name
+                    )
+                  }
+                  className="addButton me-2 bg-white text-dark border border-success rounded px-3 py-1"
+                >
+                  <AiOutlineZoomOut className="me-2" />
+                  Remove From Search
+                </button>
+              )}
 
-              {hasPermission(permissions, "All Documents", "Archive Document") && (
+              {hasPermission(permissions, "All Documents", "Archive Document", viewDocument?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4709,7 +4717,7 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Archive
                 </button>
               )}
-              {hasPermission(permissions, "All Documents", "Delete Document") && (
+              {hasPermission(permissions, "All Documents", "Delete Document", viewDocument?.sector_category) && (
                 <button
                   onClick={() =>
                     handleOpenModal(
@@ -4723,7 +4731,6 @@ const [generatedID, setGeneratedID] =useState<number>(0);
                   Delete
                 </button>
               )}
-
             </div>
 
           </Modal.Body>
