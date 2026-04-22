@@ -25,6 +25,16 @@ export const hasPermission = (
         }
     }
 
+    // NEW: If no sectorId is provided, check ALL sectors (aggregation)
+    // This allows sidebar items to show if the user has permission in at least one sector.
+    if (sectorId === undefined && sectorPermissions) {
+        for (const sId in sectorPermissions) {
+            if (sectorPermissions[sId][group]?.includes(permission)) {
+                return true;
+            }
+        }
+    }
+
     // Fallback to global permissions if specific sector check fails or no sector provided
     return globalPermissions[group]?.includes(permission) || false;
   };

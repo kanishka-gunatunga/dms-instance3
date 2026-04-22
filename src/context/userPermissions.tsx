@@ -57,21 +57,29 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
         // Parse the new structure
         permissionBlocks.forEach((block: { sector_id: number; permissions?: { group: string; items: string[] }[] }) => {
-           const sectorId = block.sector_id;
-           const blockPermissions: { [key: string]: string[] } = {};
-           
-           if (block.permissions) {
-               block.permissions.forEach((permission: { group: string; items: string[] }) => {
-                 blockPermissions[permission.group] = permission.items;
-               });
-           }
-
-           // If it's sector 0 (All Sectors/Legacy), map it to global
-           if (sectorId === 0) {
-               Object.assign(globalPermissions, blockPermissions);
-           } else {
-               sectorPermissions[sectorId] = blockPermissions;
-           }
+            const sectorId = block.sector_id;
+            
+            // Determine the target permission object (global or a specific sector)
+            const target = sectorId === 0 
+                ? globalPermissions 
+                : (sectorPermissions[sectorId] || (sectorPermissions[sectorId] = {}));
+            
+            if (block.permissions) {
+                block.permissions.forEach((permission: { group: string; items: string[] }) => {
+                    if (!target[permission.group]) {
+                        // If group doesn't exist, just copy the items
+                        target[permission.group] = [...permission.items];
+                    } else {
+                        // If group exists, merge unique actions (items)
+                        const existingItems = target[permission.group];
+                        permission.items.forEach(item => {
+                            if (!existingItems.includes(item)) {
+                                existingItems.push(item);
+                            }
+                        });
+                    }
+                });
+            }
         });
 
         // If we only have global permissions but we aren't explicitly admin, we might
