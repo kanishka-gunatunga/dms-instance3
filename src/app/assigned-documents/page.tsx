@@ -404,7 +404,12 @@ export default function AllDocTable() {
 
   useEffect(() => {
     fetchCategoryData(setCategoryDropDownData);
-    fetchAssignedDocumentsData(setDummyData);
+    fetchAssignedDocumentsData((data) => {
+      const filtered = data.filter((item: any) =>
+        hasPermission(permissions, "All Documents", "View Documents", item.sector_category)
+      );
+      setDummyData(filtered);
+    });
     fetchAndMapUserData(setUserDropDownData);
     fetchRoleData(setRoleDropDownData);
     fetchRemindersData(setTableData);
@@ -768,7 +773,12 @@ export default function AllDocTable() {
     });
 
     if (formData.entries().next().done) {
-      fetchAssignedDocumentsData(setDummyData);
+      fetchAssignedDocumentsData((data) => {
+        const filtered = data.filter((item: any) =>
+          hasPermission(permissions, "All Documents", "View Documents", item.sector_category)
+        );
+        setDummyData(filtered);
+      });
       return;
     }
 
@@ -776,7 +786,10 @@ export default function AllDocTable() {
     setIsLoadingTable(true)
     try {
       const response = await postWithAuth("filter-assigned-documents", formData);
-      setDummyData(response);
+      const filteredResponse = response.filter((item: any) =>
+        hasPermission(permissions, "All Documents", "View Documents", item.sector_category)
+      );
+      setDummyData(filteredResponse);
       setIsLoadingTable(false)
     } catch (error) {
       console.error("Failed to fetch filtered data", error);
@@ -5831,7 +5844,8 @@ export default function AllDocTable() {
                 Version History
               </button>
               )}
-              <button
+              {hasPermission(permissions, "All Documents", "Comment", viewDocument?.sector_category) && (
+                <button
                 onClick={() =>
                   handleOpenModal(
                     "commentModel",
@@ -5843,6 +5857,7 @@ export default function AllDocTable() {
                 <BiSolidCommentDetail className="me-2" />
                 Comment
               </button>
+              )}
 
               {hasPermission(permissions, "All Documents", "Add Reminder", viewDocument?.sector_category) && (
                 <button
@@ -5872,7 +5887,8 @@ export default function AllDocTable() {
                   Send Email
                 </button>
               )}
-              <button
+              {hasPermission(permissions, "All Documents", "Remove From Search", viewDocument?.sector_category) && (
+                <button
                 onClick={() =>
                   handleOpenModal(
                     "removeIndexingModel",
@@ -5884,6 +5900,7 @@ export default function AllDocTable() {
                 <AiOutlineZoomOut className="me-2" />
                 Remove From Search
               </button>
+              )}
 
               {hasPermission(permissions, "All Documents", "Archive Document", viewDocument?.sector_category) && (
                 <button
