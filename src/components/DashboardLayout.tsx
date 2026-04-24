@@ -142,6 +142,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
             name: "Assigned Documents",
             url: "/assigned-documents",
             icon: <IoListOutline/>,
+            permission: {group: "Assigned Documents"},
         },
         {
             name: "All Documents",
