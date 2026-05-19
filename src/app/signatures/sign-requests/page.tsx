@@ -78,7 +78,7 @@ const SignRequestsPage = () => {
       const response = await getWithAuth(`view-document/${doc.id}/${userId}`);
       if (response && response.data) {
         try {
-          await postWithAuth(`view-sign-document/${doc.id}`, new FormData());
+          await getWithAuth(`view-sign-document/${doc.id}`);
         } catch (error) {
           console.error("Failed to track view time for document:", error);
         }
