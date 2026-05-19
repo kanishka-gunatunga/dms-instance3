@@ -12,9 +12,8 @@ import { useRouter } from "next/navigation";
 import { IoClose, IoSaveOutline } from "react-icons/io5";
 import { MdOutlineCancel } from "react-icons/md";
 import ToastMessage from "@/components/common/Toast";
-import { fetchRoleData, fetchSectors } from "@/utils/dataFetchFunctions";
+import { fetchRoleData } from "@/utils/dataFetchFunctions";
 import { RoleDropdownItem } from "@/types/types";
-import { SectorDropdownItem } from "@/types/types";
 
 type Params = {
   id: string;

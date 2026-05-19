@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Button, Tag, Table} from 'antd';
 import type {TableProps} from 'antd';
 import {BsEye, BsDownload} from 'react-icons/bs';
@@ -146,14 +146,7 @@ const AssignedFiles: React.FC<AssignedFilesProps> = ({documents, userId}) => {
 
     const newFilesCount = documents.filter(doc => doc.is_new === 1).length;
 
-    useEffect(() => {
-        if (modalStates.viewModel && selectedDocumentId !== null) {
-            handleGetViewData(selectedDocumentId);
-            // console.log("View Document : ", viewDocument)
-        }
-    }, [modalStates.viewModel, selectedDocumentId]);
-
-    const handleGetViewData = async (id: number) => {
+    const handleGetViewData = useCallback(async (id: number) => {
         try {
             const response = await getWithAuth(`view-document/${id}/${userId}`);
             const data = response.data;
@@ -167,7 +160,14 @@ const AssignedFiles: React.FC<AssignedFilesProps> = ({documents, userId}) => {
         } catch (error) {
             console.error("Error :", error);
         }
-    };
+    }, [userId]);
+
+    useEffect(() => {
+        if (modalStates.viewModel && selectedDocumentId !== null) {
+            handleGetViewData(selectedDocumentId);
+            // console.log("View Document : ", viewDocument)
+        }
+    }, [modalStates.viewModel, selectedDocumentId, handleGetViewData]);
 
     const handleCloseModal = (modalName: keyof typeof modalStates) => {
         setModalStates((prev) => ({...prev, [modalName]: false}));

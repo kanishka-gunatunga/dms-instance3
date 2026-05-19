@@ -6,15 +6,38 @@ import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useUserContext } from "./userContext";
 
-const PermissionsContext = createContext<{ [key: string]: string[] }>({});
+export interface ParsedPermissions {
+  isAdmin: boolean;
+  globalPermissions: { [key: string]: string[] };
+  sectorPermissions: { [sectorId: number]: { [key: string]: string[] } };
+}
+
+const PermissionsContext = createContext<ParsedPermissions>({
+  isAdmin: false,
+  globalPermissions: {},
+  sectorPermissions: {},
+});
 
 export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [permissions, setPermissions] = useState<{ [key: string]: string[] }>({});
+  const [permissions, setPermissions] = useState<ParsedPermissions>({
+    isAdmin: false,
+    globalPermissions: {},
+    sectorPermissions: {},
+  });
   const { userId, userType } = useUserContext();
   const router = useRouter();
 
   useEffect(() => {
-    if (!userId || userType === "super_admin") return;
+    if (!userId || userType === "super_admin") {
+      if (userType === "super_admin") {
+         setPermissions({
+             isAdmin: true,
+             globalPermissions: {},
+             sectorPermissions: {}
+         });
+      }
+      return;
+    }
 
     const fetchRoleData = async () => {
       try {
@@ -26,14 +49,49 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
           return;
         }
 
-        const permissionList = response.permissions || [];
-        const initialSelectedGroups: { [key: string]: string[] } = {};
+        const isAdmin = response.is_admin || false;
+        const permissionBlocks = response.permissions || [];
+        
+        const globalPermissions: { [key: string]: string[] } = {};
+        const sectorPermissions: { [sectorId: number]: { [key: string]: string[] } } = {};
 
-        permissionList.forEach((permission: { group: string; items: string[] }) => {
-          initialSelectedGroups[permission.group] = permission.items;
+        // Parse the new structure
+        permissionBlocks.forEach((block: { sector_id: number; permissions?: { group: string; items: string[] }[] }) => {
+            const sectorId = block.sector_id;
+            
+            // Determine the target permission object (global or a specific sector)
+            const target = sectorId === 0 
+                ? globalPermissions 
+                : (sectorPermissions[sectorId] || (sectorPermissions[sectorId] = {}));
+            
+            if (block.permissions) {
+                block.permissions.forEach((permission: { group: string; items: string[] }) => {
+                    if (!target[permission.group]) {
+                        // If group doesn't exist, just copy the items
+                        target[permission.group] = [...permission.items];
+                    } else {
+                        // If group exists, merge unique actions (items)
+                        const existingItems = target[permission.group];
+                        permission.items.forEach(item => {
+                            if (!existingItems.includes(item)) {
+                                existingItems.push(item);
+                            }
+                        });
+                    }
+                });
+            }
         });
 
-        setPermissions(initialSelectedGroups);
+        // If we only have global permissions but we aren't explicitly admin, we might
+        // still distribute them across all sectors if needed, but the hasPermission 
+        // util will handle fallback to global.
+
+        setPermissions({
+            isAdmin,
+            globalPermissions,
+            sectorPermissions
+        });
+        
       } catch (error) {
         console.error("Failed to fetch role data:", error);
         router.push("/unauthorized");
