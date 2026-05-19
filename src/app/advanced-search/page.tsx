@@ -3239,7 +3239,7 @@ export default function AllDocTable() {
                   type="file"
                   className="form-control p-1"
                   id="newVersionDocument"
-                  accept=".pdf,.doc,.docx,.png,.jpg"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.mp4,.webm,.avi,.mov,.wmv,.mkv,.mp3,.wav,.flac,.ogg"
                   onChange={handleNewVersionFileChange}
                   required
                 ></input>
@@ -4912,8 +4912,26 @@ export default function AllDocTable() {
             <div className="d-flex preview-container">
               {viewDocument && (
                 <>
-                  {/* Image Preview */}
-                  {["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "ico", "avif"].includes(viewDocument.type) ? (
+                  {/* Video Preview */}
+                                        {["mp4", "webm", "ogg", "avi", "mov", "mkv", "wmv"].includes(viewDocument.type?.toLowerCase()) ? (
+                                            <div className="video-preview" style={{ width: "100%", textAlign: "center" }}>
+                                                <video controls style={{ maxWidth: "100%", maxHeight: "500px" }}>
+                                                    <source src={viewDocument.url} type={`video/${viewDocument.type.toLowerCase() === 'mkv' ? 'webm' : viewDocument.type.toLowerCase()}`} />
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                            </div>
+                                        ) : 
+                                        /* Audio Preview */
+                                        ["mp3", "wav", "flac"].includes(viewDocument.type?.toLowerCase()) ? (
+                                            <div className="audio-preview" style={{ width: "100%", padding: "20px", background: "#f8f9fa", borderRadius: "8px", textAlign: "center" }}>
+                                                <audio controls style={{ width: "100%" }}>
+                                                    <source src={viewDocument.url} type={`audio/${viewDocument.type.toLowerCase() === 'mp3' ? 'mpeg' : viewDocument.type.toLowerCase()}`} />
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                        ) : 
+                                        /* Image Preview */
+                                        ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "ico", "avif"].includes(viewDocument.type) ? (
                     <Image
                       src={viewDocument.url}
                       alt={viewDocument.name}
@@ -5202,8 +5220,26 @@ export default function AllDocTable() {
             <div className="d-flex preview-container">
               {oldVersionDocument && (
                 <>
-                  {/* Image Preview */}
-                  {["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "ico", "avif", "tif"].includes(oldVersionDocument.type) ? (
+                  {/* Video Preview */}
+                                        {["mp4", "webm", "ogg", "avi", "mov", "mkv", "wmv"].includes(oldVersionDocument.type?.toLowerCase()) ? (
+                                            <div className="video-preview" style={{ width: "100%", textAlign: "center" }}>
+                                                <video controls style={{ maxWidth: "100%", maxHeight: "500px" }}>
+                                                    <source src={oldVersionDocument.url} type={`video/${oldVersionDocument.type.toLowerCase() === 'mkv' ? 'webm' : oldVersionDocument.type.toLowerCase()}`} />
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                            </div>
+                                        ) : 
+                                        /* Audio Preview */
+                                        ["mp3", "wav", "flac"].includes(oldVersionDocument.type?.toLowerCase()) ? (
+                                            <div className="audio-preview" style={{ width: "100%", padding: "20px", background: "#f8f9fa", borderRadius: "8px", textAlign: "center" }}>
+                                                <audio controls style={{ width: "100%" }}>
+                                                    <source src={oldVersionDocument.url} type={`audio/${oldVersionDocument.type.toLowerCase() === 'mp3' ? 'mpeg' : oldVersionDocument.type.toLowerCase()}`} />
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                        ) : 
+                                        /* Image Preview */
+                                        ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "ico", "avif", "tif"].includes(oldVersionDocument.type) ? (
                     <Image
                       src={oldVersionDocument.url}
                       alt={oldVersionDocument.name}
@@ -5299,7 +5335,7 @@ export default function AllDocTable() {
                   type="file"
                   className="form-control p-1"
                   id="newVersionDocument"
-                  accept=".pdf,.doc,.docx,.png,.jpg"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.mp4,.webm,.avi,.mov,.wmv,.mkv,.mp3,.wav,.flac,.ogg"
                   onChange={handleNewVersionFileChange}
                   required
                 ></input>

@@ -331,7 +331,7 @@ export default function AllDocTable() {
                         <input
                           type="file"
                           id="document"
-                          accept=".pdf,.doc,.docx,.png,.jpg"
+                          accept=".pdf,.doc,.docx,.png,.jpg,.mp4,.webm,.avi,.mov,.wmv,.mkv,.mp3,.wav,.flac,.ogg"
                           multiple
                           onChange={handleFileChange}
                           required
@@ -1401,7 +1401,7 @@ export default function AllDocTable() {
 //                         <input
 //                           type="file"
 //                           id="document"
-//                           accept=".pdf,.doc,.docx,.png,.jpg"
+//                           accept=".pdf,.doc,.docx,.png,.jpg,.mp4,.webm,.avi,.mov,.wmv,.mkv,.mp3,.wav,.flac,.ogg"
 //                           multiple
 //                           onChange={handleFileChange}
 //                           required
