@@ -1,4 +1,5 @@
 /* Sign Requests page – theme-aligned modern UI */
+/* Theme: primary #EA580C, light #FFF4E8, text #0A0A0A, muted #717182 */
 
 .pageWrapper {
   padding-bottom: 2rem;
@@ -19,6 +20,13 @@
     justify-content: space-between;
     align-items: center;
   }
+}
+
+.pageTitle {
+  color: #0A0A0A !important;
+  font-size: 1.35rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em;
 }
 
 .card {

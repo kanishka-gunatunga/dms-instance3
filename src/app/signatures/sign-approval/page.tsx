@@ -122,7 +122,7 @@ const SignApprovalPage = () => {
                       <td>{doc.category?.category_name || "Uncategorized"}</td>
                       <td>{new Date(doc.signed_date).toLocaleDateString()}</td>
                       <td>
-                        <span className="badge bg-success" style={{ padding: "0.5em 0.7em" }}>
+                        <span className={styles.statusBadgeSigned}>
                           {doc.status}
                         </span>
                       </td>
