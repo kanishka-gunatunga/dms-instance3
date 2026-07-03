@@ -7,13 +7,16 @@ import React, { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { DropdownButton, Dropdown } from "react-bootstrap";
 import { postWithAuth } from "@/utils/apiClient";
-import { IoClose, IoSaveOutline } from "react-icons/io5";
-import { MdOutlineCancel } from "react-icons/md";
+import { useRouter } from "next/navigation";
+import { IoClose, IoSaveOutline, IoEye, IoEyeOff } from "react-icons/io5";
+import { MdCancel } from "react-icons/md";
 import { RoleDropdownItem } from "@/types/types";
-import { fetchRoleData } from "@/utils/dataFetchFunctions";
+import { fetchRoleData, fetchSectors } from "@/utils/dataFetchFunctions";
+import { getFlattenedSectors } from "@/utils/commonFunctions";
 import ToastMessage from "@/components/common/Toast";
 import { Input } from "antd";
-
+import { SectorDropdownItem } from "@/types/types";
+import styles from "./add-user.module.css";
 
 interface ValidationErrors {
   first_name?: string;
@@ -47,8 +50,27 @@ export default function AllDocTable() {
   const [toastType, setToastType] = useState<"success" | "error">("success");
   const [toastMessage, setToastMessage] = useState("");
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
+  const [sectorDropDownData, setSectorDropDownData] = useState<
+    SectorDropdownItem[]
+  >([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const router = useRouter();
+  const handleSectorSelect = (sectorId: string) => {
+    if (!selectedSectorIds.includes(sectorId)) {
+      setSelectedSectorIds((prev) => [...prev, sectorId]);
+    }
+  };
+
+  const handleRemoveSector = (sectorId: string) => {
+    setSelectedSectorIds((prev) => prev.filter((id) => id !== sectorId));
+  };
+
   useEffect(() => {
     fetchRoleData(setRoleDropDownData);
+    fetchSectors(setSectorDropDownData)
   }, []);
 
   useEffect(() => {
@@ -95,6 +117,7 @@ export default function AllDocTable() {
     } else if (!confirmPassword.trim()) {
       newErrors.password_confirmation = "Confirm password is required.";
     }
+    if (selectedSectorIds.length === 0) newErrors.sector = "Sector is required.";
     return newErrors;
   };
 
@@ -115,7 +138,7 @@ export default function AllDocTable() {
     formData.append("password", password);
     formData.append("password_confirmation", confirmPassword);
     formData.append("role", JSON.stringify(selectedRoleIds));
-
+    formData.append("sector", JSON.stringify(selectedSectorIds));
     // for (const [key, value] of formData.entries()) {
     //   console.log(`${key}: ${value}`);
     // }
@@ -159,21 +182,17 @@ export default function AllDocTable() {
   return (
     <>
       <DashboardLayout>
-        <div className="d-flex justify-content-between align-items-center pt-2">
-          <Heading text="Add Users" color="#444" />
-        </div>
+        <div className={styles.pageWrapper}>
+          <div className={styles.pageHeader}>
+            <Heading text="Add Users" color="#444" />
+          </div>
 
-        <div className="d-flex flex-column bg-white p-2 p-lg-3 rounded mt-3">
-          <div
-            style={{ maxHeight: "380px", overflowY: "auto" }}
-            className="custom-scroll"
-          >
-            <div className="p-0 row row-cols-1 row-cols-md-2 overflow-hidden w-100">
-              <div className="d-flex flex-column">
-                <p className="mb-1" style={{ fontSize: "14px" }}>
-                  First Name
-                </p>
-                <div className="input-group mb-3 pe-lg-4">
+          <div className={`d-flex flex-column ${styles.card} ${styles.formCard}`}>
+            <div className={`${styles.formContent} custom-scroll`}>
+              <div className="p-0 row row-cols-1 row-cols-md-2 w-100">
+                <div className={`d-flex flex-column ${styles.formGroup}`}>
+                  <p className={styles.formLabel}>First Name</p>
+                  <div className={`${styles.inputWrapper} mb-3 pe-lg-4`}>
                   <Input
                     placeholder=""
                     type="text"
@@ -182,13 +201,11 @@ export default function AllDocTable() {
                     className={errors.first_name ? "is-invalid" : ""}
                   />
                   {errors.first_name && <div className="invalid-feedback">{errors.first_name}</div>}
+                  </div>
                 </div>
-              </div>
-              <div className="d-flex flex-column">
-                <p className="mb-1" style={{ fontSize: "14px" }}>
-                  Last Name
-                </p>
-                <div className="input-group mb-3 pe-lg-4">
+              <div className={`d-flex flex-column ${styles.formGroup}`}>
+                <p className={styles.formLabel}>Last Name</p>
+                <div className={`${styles.inputWrapper} mb-3 pe-lg-4`}>
                   <Input
                     placeholder=""
                     type="text"
@@ -198,29 +215,24 @@ export default function AllDocTable() {
                   />
                   {errors.last_name && <div className="invalid-feedback">{errors.last_name}</div>}
                 </div>
-
               </div>
-              <div className="d-flex flex-column">
-                <p className="mb-1" style={{ fontSize: "14px" }}>
-                  Mobile Number
-                </p>
-                <div className="input-group mb-3 pe-lg-4">
+              <div className={`d-flex flex-column ${styles.formGroup}`}>
+                <p className={styles.formLabel}>Mobile Number</p>
+                <div className={`${styles.inputWrapper} mb-3 pe-lg-4`}>
                   <Input
                     placeholder=""
-                    type="number"
+                    type="tel"
+                    inputMode="numeric"
                     value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value)}
+                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
                     className={errors.mobile_no ? "is-invalid" : ""}
                   />
                   {errors.mobile_no && <div className="invalid-feedback">{errors.mobile_no}</div>}
                 </div>
-
               </div>
-              <div className="d-flex flex-column">
-                <p className="mb-1" style={{ fontSize: "14px" }}>
-                  Email
-                </p>
-                <div className="input-group mb-3 pe-lg-4">
+              <div className={`d-flex flex-column ${styles.formGroup}`}>
+                <p className={styles.formLabel}>Email</p>
+                <div className={`${styles.inputWrapper} mb-3 pe-lg-4`}>
                   <Input
                     placeholder=""
                     type="text"
@@ -230,42 +242,51 @@ export default function AllDocTable() {
                   />
                   {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                 </div>
-
               </div>
-              <div className="d-flex flex-column">
-                <p className="mb-1" style={{ fontSize: "14px" }}>
-                  Password
-                </p>
-                <div className="input-group mb-3 pe-lg-4">
-                  <Input.Password
-                    placeholder="input password"
+              <div className={`d-flex flex-column ${styles.formGroup}`}>
+                <p className={styles.formLabel}>Password</p>
+                <div className={styles.passwordInputWrap}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className={`${styles.formInput} ${styles.formInputWithIcon} ${errors.password ? styles.isInvalid : ""}`}
+                    placeholder="Enter password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={errors.password ? "is-invalid" : ""}
                   />
-                  {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    onClick={() => setShowPassword((p) => !p)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <IoEye size={18} /> : <IoEyeOff size={18} />}
+                  </button>
                 </div>
-
+                {errors.password && <div className="invalid-feedback">{errors.password}</div>}
               </div>
-              <div className="d-flex flex-column">
-                <p className="mb-1" style={{ fontSize: "14px" }}>
-                  Confirm Password
-                </p>
-                <div className="input-group mb-3 pe-lg-4">
-                  <Input.Password
-                    placeholder="input password"
+              <div className={`d-flex flex-column ${styles.formGroup}`}>
+                <p className={styles.formLabel}>Confirm Password</p>
+                <div className={styles.passwordInputWrap}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className={`${styles.formInput} ${styles.formInputWithIcon} ${errors.password_confirmation ? styles.isInvalid : ""}`}
+                    placeholder="Confirm password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={errors.password_confirmation ? "is-invalid" : ""}
                   />
-                  {errors.password_confirmation && <div className="invalid-feedback">{errors.password_confirmation}</div>}
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    onClick={() => setShowConfirmPassword((p) => !p)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <IoEye size={18} /> : <IoEyeOff size={18} />}
+                  </button>
                 </div>
-
+                {errors.password_confirmation && <div className="invalid-feedback">{errors.password_confirmation}</div>}
               </div>
-              <div className="col-12 col-lg-6 d-flex flex-column">
-                <p className="mb-1 text-start w-100" style={{ fontSize: "14px" }}>
-                  Roles
-                </p>
+              <div className={`col-12 col-lg-6 d-flex flex-column ${styles.formGroup}`}>
+                <p className={`${styles.formLabel} text-start w-100`}>Roles</p>
                 <div className="d-flex flex-column position-relative">
                   <DropdownButton
                     id="dropdown-category-button"
@@ -294,7 +315,7 @@ export default function AllDocTable() {
                     {roles.map((role, index) => (
                       <span
                         key={index}
-                        className="badge bg-primary text-light me-2 p-2 d-inline-flex align-items-center"
+                        className={`${styles.badgeTag} d-inline-flex align-items-center`}
                       >
                         {role}
                         <IoClose
@@ -307,31 +328,81 @@ export default function AllDocTable() {
                   </div>
                 </div>
               </div>
+              <div className={`col-12 col-lg-6 d-flex flex-column ${styles.formGroup}`}>
+                <p className={`${styles.formLabel} text-start w-100`}>Sector</p>
+                <div className="d-flex flex-column position-relative">
+                  <DropdownButton
+                    id="dropdown-category-button"
+                    title={
+                      selectedSectorIds.length > 0
+                        ? `${selectedSectorIds.length} Sectors Selected`
+                        : "Select Sector"
+                    }
+                    className="custom-dropdown-text-start text-start w-100"
+                    onSelect={(value) => handleSectorSelect(value || "")}
+                  >
+                    {getFlattenedSectors(sectorDropDownData).map((sector) => (
+                      <Dropdown.Item
+                        key={sector.id}
+                        eventKey={sector.id.toString()}
+                        style={{
+                          fontWeight: sector.level === 0 ? "bold" : "normal",
+                          paddingLeft: `${sector.level * 20 + 10}px`,
+                        }}
+                      >
+                        {sector.sector_name}
+                      </Dropdown.Item>
+                    ))}
+                  </DropdownButton>
+                  {errors.sector && <div className={styles.errorText}>{errors.sector}</div>}
+                  <div className="mt-1">
+                    {selectedSectorIds.map((sectorId) => {
+                      const sector = sectorDropDownData.find(
+                        (item) => item.id.toString() === sectorId
+                      );
+                      return sector ? (
+                        <span
+                          key={sectorId}
+                          className={`${styles.badgeTag} d-inline-flex align-items-center`}
+                        >
+                          {sector.sector_name}
+                          <IoClose
+                            className="ms-2"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleRemoveSector(sectorId)}
+                          />
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <div className={styles.formActions}>
+              <button
+                onClick={handleSubmit}
+                className={styles.btnSave}
+              >
+                <IoSaveOutline fontSize={16} /> Save
+              </button>
+              <button
+                onClick={() => router.push("/users")}
+                className={styles.btnCancel}
+              >
+                <MdCancel fontSize={16} /> Cancel
+              </button>
             </div>
           </div>
-
-          <div className="d-flex flex-row mt-5">
-            <button
-              onClick={handleSubmit}
-              className="custom-icon-button button-success px-3 py-1 rounded me-2"
-            >
-              <IoSaveOutline fontSize={16} className="me-1" /> Save
-            </button>
-            <button
-              onClick={() => window.location.href = "/users"}
-              className="custom-icon-button button-danger text-white bg-danger px-3 py-1 rounded"
-            >
-              <MdOutlineCancel fontSize={16} className="me-1" /> Cancel
-            </button>
-          </div>
         </div>
+        <ToastMessage
+          message={toastMessage}
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          type={toastType}
+        />
       </DashboardLayout>
-      <ToastMessage
-        message={toastMessage}
-        show={showToast}
-        onClose={() => setShowToast(false)}
-        type={toastType}
-      />
     </>
   );
 }

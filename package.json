@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@azure/msal-browser": "^5.10.1",
     "@google-cloud/translate": "^9.0.1",
     "@pinecone-database/pinecone": "^5.1.1",
     "antd": "^5.22.1",

@@ -5,6 +5,7 @@ import Heading from "@/components/common/Heading";
 import DashboardLayout from "@/components/DashboardLayout";
 import useAuth from "@/hooks/useAuth";
 import React, { useEffect, useState, useRef } from "react";
+import Cookies from "js-cookie";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { getWithAuth, postWithAuth, getBlobWithAuth, API_BASE_URL } from "@/utils/apiClient";
 import { useRouter } from "next/navigation";
@@ -53,8 +54,17 @@ export default function AllDocTable({ }: Props) {
     const [password, setPassword] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
     const [show, setShow] = useState(false);
+    const [error, setError] = useState("");
+
+    // MFA States
+    const [mfaEnabled, setMfaEnabled] = useState<boolean>(false);
+    const [mfaSecret, setMfaSecret] = useState<string>("");
+    const [mfaQrCode, setMfaQrCode] = useState<string>("");
+    const [mfaRecoveryCodes, setMfaRecoveryCodes] = useState<string[]>([]);
+    const [mfaVerificationCode, setMfaVerificationCode] = useState<string>("");
+    const [mfaPassword, setMfaPassword] = useState<string>("");
+    const [mfaSetupStep, setMfaSetupStep] = useState<"idle" | "enrolling" | "disabling">("idle");
 
     const signatureInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
@@ -117,7 +127,6 @@ export default function AllDocTable({ }: Props) {
                     const apiOrigin = new URL(API_BASE_URL).origin;
                     signatureSource = `${apiOrigin}${signatureSource.startsWith("/") ? "" : "/"}${signatureSource}`;
                 }
-
                 setSignature(prev => {
                     if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
                     return signatureSource;
@@ -148,6 +157,7 @@ export default function AllDocTable({ }: Props) {
                 setMyEmail(response.user_details?.email || response.email || "");
                 const roleIds = parseRoles(response.role);
                 setSelectedRoleIds(roleIds);
+                setMfaEnabled(response.mfa_enabled === 1 || response.mfa_enabled === true);
             } catch (error) {
                 console.error("Failed to fetch profile data:", error);
             }
@@ -265,33 +275,23 @@ export default function AllDocTable({ }: Props) {
         }, 5000);
     };
 
-    const handleShow = () => {
-        setShow(true);
-    };
-
-    const handleClose = () => {
-        setShow(false);
-    };
+    const handleShow = () => { setShow(true); };
+    const handleClose = () => { setShow(false); };
 
     const validateForm = () => {
         if (!password || !confirmPassword) {
             setError("All fields are required.");
             return false;
         }
-
         if (password !== confirmPassword) {
             setError("Passwords do not match.");
             return false;
         }
-
         const passwordRegex = /^.{8,}$/;
         if (!passwordRegex.test(password)) {
-            setError(
-                "Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character."
-            );
+            setError("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
             return false;
         }
-
         setError("");
         return true;
     };
@@ -310,22 +310,123 @@ export default function AllDocTable({ }: Props) {
                     setToastType("error");
                     setToastMessage("Failed to reset password!");
                     setShowToast(true);
-                    setTimeout(() => {
-                        setShowToast(false);
-                    }, 5000);
+                    setTimeout(() => setShowToast(false), 5000);
                 } else {
                     setToastType("success");
                     setToastMessage("Reset Password Successful!");
                     setShowToast(true);
-                    setTimeout(() => {
-                        setShowToast(false);
-                    }, 5000);
+                    setTimeout(() => setShowToast(false), 5000);
                 }
-
                 handleClose();
             } catch (error) {
                 console.error("Error submitting form:", error);
             }
+        }
+    };
+
+    // ── MFA handlers ────────────────────────────────────────────────────────
+
+    const handleStartMfaSetup = async () => {
+        try {
+            const res = await postWithAuth("mfa/generate", new FormData());
+            if (res.status === "success" || res.secret) {
+                setMfaSecret(res.secret);
+                setMfaQrCode(res.qrCodeUrl);
+                setMfaRecoveryCodes(res.recovery_codes);
+                setMfaSetupStep("enrolling");
+            } else {
+                setToastType("error");
+                setToastMessage("Failed to initiate MFA setup.");
+                setShowToast(true);
+            }
+        } catch (error) {
+            console.error("MFA Generate Error:", error);
+        }
+    };
+
+    const handleEnableMfa = async () => {
+        if (!mfaVerificationCode || mfaVerificationCode.length !== 6) {
+            setToastType("error");
+            setToastMessage("Please enter a valid 6-digit OTP code.");
+            setShowToast(true);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}mfa/enable`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${Cookies.get("authToken")}`
+                },
+                body: JSON.stringify({
+                    secret: mfaSecret,
+                    code: mfaVerificationCode,
+                    recovery_codes: mfaRecoveryCodes
+                })
+            });
+
+            const res = await response.json();
+            if (res.status === "success") {
+                setMfaEnabled(true);
+                setMfaSetupStep("idle");
+                setMfaVerificationCode("");
+                setToastType("success");
+                setToastMessage("Multi-Factor Authentication enabled successfully!");
+                setShowToast(true);
+            } else {
+                setToastType("error");
+                setToastMessage(res.message || "Failed to verify authenticator code.");
+                setShowToast(true);
+            }
+        } catch (error) {
+            console.error("MFA Enable Error:", error);
+        }
+    };
+
+    const handleDisableMfa = async () => {
+        if (!mfaPassword) {
+            setToastType("error");
+            setToastMessage("Account password is required to disable MFA.");
+            setShowToast(true);
+            return;
+        }
+        if (!mfaVerificationCode || mfaVerificationCode.length !== 6) {
+            setToastType("error");
+            setToastMessage("Verification OTP code is required.");
+            setShowToast(true);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}mfa/disable`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${Cookies.get("authToken")}`
+                },
+                body: JSON.stringify({
+                    password: mfaPassword,
+                    code: mfaVerificationCode
+                })
+            });
+
+            const res = await response.json();
+            if (res.status === "success") {
+                setMfaEnabled(false);
+                setMfaSetupStep("idle");
+                setMfaPassword("");
+                setMfaVerificationCode("");
+                setToastType("success");
+                setToastMessage("Multi-Factor Authentication disabled.");
+                setShowToast(true);
+            } else {
+                setToastType("error");
+                setToastMessage(res.message || "Failed to disable MFA. Check password/OTP.");
+                setShowToast(true);
+            }
+        } catch (error) {
+            console.error("MFA Disable Error:", error);
         }
     };
 
@@ -350,6 +451,8 @@ export default function AllDocTable({ }: Props) {
                     <div className={styles.card}>
                         <div className={`${styles.scrollContent} custom-scroll`}>
                             <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k || "general")} id="profile-tabs" className="mb-3">
+
+                                {/* ── General Tab ── */}
                                 <Tab eventKey="general" title="General">
                                     <div className="p-0 row row-cols-1 row-cols-md-2 overflow-hidden w-100 mt-2">
                                         <div className="d-flex flex-column pe-md-3">
@@ -403,6 +506,7 @@ export default function AllDocTable({ }: Props) {
                                     </div>
                                 </Tab>
 
+                                {/* ── Digital Signature Tab ── */}
                                 <Tab eventKey="signature" title="Digital Signature">
                                     <div className="d-flex flex-column gap-4 mt-2">
                                         <div className="d-flex gap-2">
@@ -476,6 +580,149 @@ export default function AllDocTable({ }: Props) {
                                         )}
                                     </div>
                                 </Tab>
+
+                                {/* ── Security & MFA Tab ── */}
+                                <Tab eventKey="mfa" title="Security & MFA">
+                                    <div className="d-flex flex-column gap-3 mt-2 col-12 col-lg-8">
+                                        <div className="p-4 rounded border shadow-sm bg-white">
+                                            <h4 className="font-weight-bold mb-2 text-primary">Multi-Factor Authentication (MFA)</h4>
+                                            <p className="text-muted small">
+                                                Protect your account using standard TOTP-based Authenticator applications like Google Authenticator or Microsoft Authenticator.
+                                            </p>
+
+                                            {mfaEnabled ? (
+                                                <div className="mt-3">
+                                                    <div className="d-flex align-items-center mb-3">
+                                                        <span className="badge bg-success p-2 me-2" style={{ fontSize: "0.9rem" }}>Active / Secure</span>
+                                                        <span className="text-muted small">MFA is fully enabled and active on your account.</span>
+                                                    </div>
+
+                                                    {mfaSetupStep !== "disabling" ? (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            onClick={() => setMfaSetupStep("disabling")}
+                                                        >
+                                                            Disable Multi-Factor Authentication
+                                                        </button>
+                                                    ) : (
+                                                        <div className="p-3 bg-light rounded border mt-3">
+                                                            <h5 className="font-weight-bold text-danger mb-2">Disable Multi-Factor Authentication</h5>
+                                                            <p className="text-muted small">Please confirm your identity by entering your account password and the 6-digit OTP code.</p>
+
+                                                            <div className="mb-2">
+                                                                <label className="form-label small font-weight-bold">Account Password</label>
+                                                                <input
+                                                                    type="password"
+                                                                    className="form-control form-control-sm"
+                                                                    placeholder="Enter password"
+                                                                    value={mfaPassword}
+                                                                    onChange={(e) => setMfaPassword(e.target.value)}
+                                                                />
+                                                            </div>
+                                                            <div className="mb-3">
+                                                                <label className="form-label small font-weight-bold">Authenticator Code</label>
+                                                                <input
+                                                                    type="text"
+                                                                    maxLength={6}
+                                                                    className="form-control form-control-sm"
+                                                                    placeholder="6-digit code"
+                                                                    value={mfaVerificationCode}
+                                                                    onChange={(e) => setMfaVerificationCode(e.target.value.replace(/\D/g, ""))}
+                                                                />
+                                                            </div>
+
+                                                            <div className="d-flex gap-2">
+                                                                <button type="button" className="btn btn-danger btn-sm" onClick={handleDisableMfa}>
+                                                                    Confirm Disable
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-outline-secondary btn-sm"
+                                                                    onClick={() => { setMfaSetupStep("idle"); setMfaPassword(""); setMfaVerificationCode(""); }}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="mt-3">
+                                                    {mfaSetupStep === "idle" && (
+                                                        <div>
+                                                            <p className="text-warning font-weight-bold small">⚠️ MFA is currently disabled. Enable it to secure your documents.</p>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-primary btn-sm mt-2"
+                                                                onClick={handleStartMfaSetup}
+                                                            >
+                                                                Set up Authenticator App
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {mfaSetupStep === "enrolling" && (
+                                                        <div className="p-3 bg-light rounded border mt-3">
+                                                            <h5 className="font-weight-bold mb-3">1. Scan the QR Code</h5>
+                                                            <p className="text-muted small">Scan this image using your Google Authenticator or Microsoft Authenticator app.</p>
+
+                                                            <div className="d-flex justify-content-center p-3 bg-white border rounded mb-3">
+                                                                {mfaQrCode && <img src={mfaQrCode} alt="MFA QR" width={180} height={180} />}
+                                                            </div>
+
+                                                            <div className="mb-3">
+                                                                <span className="text-muted small font-weight-bold">Manual Entry Code:</span>
+                                                                <div className="bg-white p-2 border rounded font-monospace text-center font-weight-bold mt-1" style={{ letterSpacing: "0.1rem" }}>
+                                                                    {mfaSecret}
+                                                                </div>
+                                                            </div>
+
+                                                            <h5 className="font-weight-bold mb-2">2. Save Emergency Recovery Codes</h5>
+                                                            <p className="text-muted small mb-2">If you lose your device, these codes can recover your account. Save them securely.</p>
+                                                            <div className="row g-2 mb-3 bg-white p-2 border rounded">
+                                                                {mfaRecoveryCodes.map((code, idx) => (
+                                                                    <div key={idx} className="col-6 font-monospace small text-center p-1 bg-light border rounded">
+                                                                        {code}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            <h5 className="font-weight-bold mb-2">3. Verify Connection</h5>
+                                                            <p className="text-muted small">Enter the 6-digit OTP generated by your authenticator app to verify.</p>
+
+                                                            <div className="mb-3">
+                                                                <input
+                                                                    type="text"
+                                                                    maxLength={6}
+                                                                    className="form-control text-center font-weight-bold"
+                                                                    placeholder="e.g. 123456"
+                                                                    style={{ fontSize: "1.2rem", letterSpacing: "0.2rem" }}
+                                                                    value={mfaVerificationCode}
+                                                                    onChange={(e) => setMfaVerificationCode(e.target.value.replace(/\D/g, ""))}
+                                                                />
+                                                            </div>
+
+                                                            <div className="d-flex gap-2">
+                                                                <button type="button" className="btn btn-success btn-sm" onClick={handleEnableMfa}>
+                                                                    Verify and Enable
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-outline-secondary btn-sm"
+                                                                    onClick={() => { setMfaSetupStep("idle"); setMfaVerificationCode(""); }}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Tab>
+
                             </Tabs>
                         </div>
 
@@ -490,12 +737,9 @@ export default function AllDocTable({ }: Props) {
                     </div>
                 </div>
             </DashboardLayout>
-            <Modal
-                show={show}
-                onHide={handleClose}
-                centered
-                className="smallModel"
-            >
+
+            {/* Change Password Modal */}
+            <Modal show={show} onHide={handleClose} centered className="smallModel">
                 <Modal.Header closeButton>
                     <Modal.Title>
                         <div className="d-flex flex-row align-items-center">
@@ -552,6 +796,7 @@ export default function AllDocTable({ }: Props) {
                     </div>
                 </Modal.Body>
             </Modal>
+
             <ToastMessage
                 message={toastMessage}
                 show={showToast}
