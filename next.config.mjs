@@ -19,8 +19,8 @@ const nextConfig = {
         http://localhost:8000
         http://127.0.0.1:3000
         http://127.0.0.1:8000
-        https://dms-instance2.vercel.app
-        https://dms3.genaitech.dev
+        https://dms-instance3.vercel.app
+        https://dms4.genaitech.dev
         https://view.officeapps.live.com
         https://login.microsoftonline.com
         https://login.live.com;
@@ -28,19 +28,19 @@ const nextConfig = {
       frame-ancestors 'self'
         http://localhost:3000
         http://127.0.0.1:3000
-        https://dms-instance2.vercel.app;
+        https://dms-instance3.vercel.app;
 
       connect-src 'self'
         http://localhost:3000
         http://localhost:8000
         http://127.0.0.1:3000
         http://127.0.0.1:8000
-        https://dms-instance2.vercel.app
-        https://dms3.genaitech.dev
+        https://dms-instance3.vercel.app
+        https://dms4.genaitech.dev
         https://login.microsoftonline.com
         https://graph.microsoft.com;
 
-      img-src 'self' data: blob: https: http://localhost:* http://127.0.0.1:* https://dms3.genaitech.dev https://dms-instance2.vercel.app;
+      img-src 'self' data: blob: https: http://localhost:* http://127.0.0.1:* https://dms4.genaitech.dev https://dms-instance3.vercel.app;
 
       script-src 'self' 'unsafe-inline' 'unsafe-eval'
         https://static.cloudflareinsights.com
